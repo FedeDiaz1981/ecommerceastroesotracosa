@@ -1,0 +1,10 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { StoreShell } from "@/page-apps/StoreShell";
+
+const searchParams = Object.fromEntries(Astro.url.searchParams.entries());
+---
+
+<BaseLayout title="Galeria | Es otra cosa">
+  <StoreShell page="gallery" searchParams={searchParams} client:load />
+</BaseLayout>

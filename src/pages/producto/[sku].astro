@@ -1,0 +1,21 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { StoreShell } from "@/page-apps/StoreShell";
+import { getSiteContentSnapshot } from "@/application/catalog";
+
+export function getStaticPaths() {
+  return getSiteContentSnapshot().products
+    .filter((product) => product.status === "published")
+    .map((product) => ({
+      params: { sku: product.sku },
+      props: { sku: product.sku, title: product.name },
+    }));
+}
+
+const { sku, title } = Astro.props;
+const searchParams = Object.fromEntries(Astro.url.searchParams.entries());
+---
+
+<BaseLayout title={`${title} | Es otra cosa`}>
+  <StoreShell page="product" sku={sku} searchParams={searchParams} client:load />
+</BaseLayout>

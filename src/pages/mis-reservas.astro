@@ -1,0 +1,10 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { StoreShell } from "@/page-apps/StoreShell";
+
+const searchParams = Object.fromEntries(Astro.url.searchParams);
+---
+
+<BaseLayout title="Mis reservas | Es otra cosa">
+  <StoreShell page="mis-reservas" searchParams={searchParams} client:load />
+</BaseLayout>

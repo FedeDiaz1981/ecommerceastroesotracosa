@@ -1,0 +1,19 @@
+---
+import { getSiteContentSnapshot } from "@/application/catalog";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { StoreShell } from "@/page-apps/StoreShell";
+
+export function getStaticPaths() {
+  return (getSiteContentSnapshot().productLots ?? []).map((lot) => ({
+    params: { id: String(lot.id) },
+    props: { id: String(lot.id), title: lot.title },
+  }));
+}
+
+const { id, title } = Astro.props;
+const searchParams = Object.fromEntries(Astro.url.searchParams.entries());
+---
+
+<BaseLayout title={`${title} | Es otra cosa`}>
+  <StoreShell page="compra-colectiva" lotId={id} searchParams={searchParams} client:load />
+</BaseLayout>

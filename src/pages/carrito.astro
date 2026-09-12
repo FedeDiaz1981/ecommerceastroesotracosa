@@ -1,0 +1,8 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { StoreShell } from "@/page-apps/StoreShell";
+---
+
+<BaseLayout title="Mi pedido | Es otra cosa">
+  <StoreShell page="cart" client:load />
+</BaseLayout>

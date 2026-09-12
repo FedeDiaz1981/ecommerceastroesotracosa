@@ -1,0 +1,19 @@
+---
+import "@/styles/globals.css";
+
+const { title = "Es otra cosa", description = "Proyecto dinamico basado en la maqueta estatica de Es otra cosa." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" data-theme="caramellatte" class="h-full antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="/assets/images/logo/logo_v2.png" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen overflow-x-hidden text-base-content">
+    <slot />
+  </body>
+</html>

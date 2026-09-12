@@ -1,0 +1,921 @@
+{
+  "sessionRole": "admin",
+  "viewMode": "public",
+  "activeAdminPanel": "hero",
+  "panelSearchQuery": "",
+  "activeModalAction": "edit",
+  "headerNavigation": {
+    "searchScopes": [
+      {
+        "id": "categories",
+        "label": "CATEGORÍAS",
+        "href": "galeria.html?source=%2FGaleria%2F1-categorias"
+      },
+      {
+        "id": "brands",
+        "label": "MARCAS",
+        "href": "galeria.html?source=%2FGaleria%2F2-marcas"
+      }
+    ],
+    "sections": [
+      {
+        "id": "categories",
+        "label": "CATEGORÍAS",
+        "icon": "Content/Iconos/CATEGORIAS.png",
+        "href": "galeria.html?source=%2FGaleria%2F1-categorias",
+        "groups": [
+          {
+            "id": "categories:a-b",
+            "label": "A-B",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:a-b:1",
+                "label": "AL NATURAL EXTRACTOS",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=1"
+              },
+              {
+                "id": "categories:a-b:2",
+                "label": "BAMBOO POCHOCLOS ORGANICOS",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=2"
+              }
+            ]
+          },
+          {
+            "id": "categories:c-d",
+            "label": "C-D",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:c-d:3",
+                "label": "CASA IRWO",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=3"
+              },
+              {
+                "id": "categories:c-d:4",
+                "label": "DATILICIOUS",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=4"
+              }
+            ]
+          },
+          {
+            "id": "categories:e-f",
+            "label": "E-F",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:e-f:5",
+                "label": "EPUYEN",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=5"
+              },
+              {
+                "id": "categories:e-f:6",
+                "label": "FAMILIA VEGANA VEGANO",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=6"
+              }
+            ]
+          },
+          {
+            "id": "categories:g-h",
+            "label": "G-H",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:g-h:7",
+                "label": "GAVIA",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=7"
+              }
+            ]
+          },
+          {
+            "id": "categories:i-j",
+            "label": "I-J",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:i-j:8",
+                "label": "IRON BAR",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=8"
+              },
+              {
+                "id": "categories:i-j:9",
+                "label": "JUAL",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=9"
+              }
+            ]
+          },
+          {
+            "id": "categories:k-l",
+            "label": "K-L",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:k-l:10",
+                "label": "KALPA HARINAS VEGETALES",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=10"
+              },
+              {
+                "id": "categories:k-l:11",
+                "label": "LOW CARB",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=11"
+              }
+            ]
+          },
+          {
+            "id": "categories:m-n",
+            "label": "M-N",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:m-n:12",
+                "label": "MACHU PICHU HERBAL",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=12"
+              },
+              {
+                "id": "categories:m-n:13",
+                "label": "NATIER",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=13"
+              }
+            ]
+          },
+          {
+            "id": "categories:o-p",
+            "label": "O-P",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:o-p:14",
+                "label": "ORANN",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=14"
+              },
+              {
+                "id": "categories:o-p:15",
+                "label": "PONT",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=15"
+              }
+            ]
+          },
+          {
+            "id": "categories:q-r",
+            "label": "Q-R",
+            "href": "#",
+            "items": []
+          },
+          {
+            "id": "categories:s-t",
+            "label": "S-T",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:s-t:16",
+                "label": "SENTIDA BOTANICA COSMETICA NATURAL",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=16"
+              },
+              {
+                "id": "categories:s-t:17",
+                "label": "THAINA AL KANATER",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=17"
+              }
+            ]
+          },
+          {
+            "id": "categories:u-v",
+            "label": "U-V",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:u-v:18",
+                "label": "ULTRA TECH",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=18"
+              },
+              {
+                "id": "categories:u-v:19",
+                "label": "VALLE ORGANICO ACEITE DE COCO NEUTRO",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=19"
+              }
+            ]
+          },
+          {
+            "id": "categories:w-x",
+            "label": "W-X",
+            "href": "#",
+            "items": [
+              {
+                "id": "categories:w-x:20",
+                "label": "WIK",
+                "href": "galeria.html?source=%2FGaleria%2F1-categorias&Categoria=20"
+              }
+            ]
+          },
+          {
+            "id": "categories:y-z",
+            "label": "Y-Z",
+            "href": "#",
+            "items": []
+          }
+        ]
+      },
+      {
+        "id": "brands",
+        "label": "MARCAS",
+        "icon": "Content/Iconos/MARCAS.png",
+        "href": "galeria.html?source=%2FGaleria%2F2-marcas",
+        "groups": [
+          {
+            "id": "brands:a-b",
+            "label": "A-B",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:a-b:AL-NATURAL",
+                "label": "AL NATURAL",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=AL-NATURAL"
+              },
+              {
+                "id": "brands:a-b:BAMBOO",
+                "label": "BAMBOO",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=BAMBOO"
+              }
+            ]
+          },
+          {
+            "id": "brands:c-d",
+            "label": "C-D",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:c-d:CASA-IRWO",
+                "label": "CASA IRWO",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=CASA-IRWO"
+              },
+              {
+                "id": "brands:c-d:DATILICIUS",
+                "label": "DATILICIUS",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=DATILICIUS"
+              }
+            ]
+          },
+          {
+            "id": "brands:e-f",
+            "label": "E-F",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:e-f:EPUYEN",
+                "label": "EPUYEN",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=EPUYEN"
+              },
+              {
+                "id": "brands:e-f:FAMILIA-VEGANA",
+                "label": "FAMILIA VEGANA",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=FAMILIA-VEGANA"
+              }
+            ]
+          },
+          {
+            "id": "brands:g-h",
+            "label": "G-H",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:g-h:GAVIA",
+                "label": "GAVIA",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=GAVIA"
+              },
+              {
+                "id": "brands:g-h:GENTECH-IRON-BAR",
+                "label": "GENTECH IRON BAR",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=GENTECH-IRON-BAR"
+              },
+              {
+                "id": "brands:g-h:GENTECH-LOW-CARB",
+                "label": "GENTECH LOW CARB",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=GENTECH-LOW-CARB"
+              }
+            ]
+          },
+          {
+            "id": "brands:i-j",
+            "label": "I-J",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:i-j:JUAL",
+                "label": "JUAL",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=JUAL"
+              }
+            ]
+          },
+          {
+            "id": "brands:k-l",
+            "label": "K-L",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:k-l:KALPA",
+                "label": "KALPA",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=KALPA"
+              }
+            ]
+          },
+          {
+            "id": "brands:m-n",
+            "label": "M-N",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:m-n:MACHU-PICHU",
+                "label": "MACHU PICHU",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=MACHU-PICHU"
+              },
+              {
+                "id": "brands:m-n:NATIER",
+                "label": "NATIER",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=NATIER"
+              }
+            ]
+          },
+          {
+            "id": "brands:o-p",
+            "label": "O-P",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:o-p:ORANN",
+                "label": "ORANN",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=ORANN"
+              },
+              {
+                "id": "brands:o-p:PONT",
+                "label": "PONT",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=PONT"
+              }
+            ]
+          },
+          {
+            "id": "brands:q-r",
+            "label": "Q-R",
+            "href": "#",
+            "items": []
+          },
+          {
+            "id": "brands:s-t",
+            "label": "S-T",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:s-t:SENTIDA-BOTANICA-COSMETICA",
+                "label": "SENTIDA BOTANICA COSMETICA",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=SENTIDA-BOTANICA-COSMETICA"
+              },
+              {
+                "id": "brands:s-t:THAINA-AL-KANATER",
+                "label": "THAINA AL KANATER",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=THAINA-AL-KANATER"
+              }
+            ]
+          },
+          {
+            "id": "brands:u-v",
+            "label": "U-V",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:u-v:ULTRA-TECH",
+                "label": "ULTRA TECH",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=ULTRA-TECH"
+              },
+              {
+                "id": "brands:u-v:VALLE-ORGANICO",
+                "label": "VALLE ORGANICO",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=VALLE-ORGANICO"
+              }
+            ]
+          },
+          {
+            "id": "brands:w-x",
+            "label": "W-X",
+            "href": "#",
+            "items": [
+              {
+                "id": "brands:w-x:WIK",
+                "label": "WIK",
+                "href": "galeria.html?source=%2FGaleria%2F2-marcas&Marca=WIK"
+              }
+            ]
+          },
+          {
+            "id": "brands:y-z",
+            "label": "Y-Z",
+            "href": "#",
+            "items": []
+          }
+        ]
+      }
+    ]
+  },
+  "heroSlides": [
+    {
+      "id": 1,
+      "order": 1,
+      "title": "Nuestros productos",
+      "subtitle": "Mira nuestros produtos",
+      "badge": "Catalogo",
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/hero_slides/nuestros-productos-carrusel-principal-image-1787012169884-03a50192.png",
+      "imageMobile": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/hero_slides/nuestros-productos-carrusel-principal-imagemobile-1787012175339-3e5c561d.png",
+      "link": "/galeria",
+      "active": true,
+      "homeSpotlight": true
+    }
+  ],
+  "banners": [
+    {
+      "id": 3,
+      "text": "Bienvenido!!",
+      "order": 1,
+      "active": true
+    },
+    {
+      "id": 1,
+      "text": "SI buscas un sillones somos tu mejor opción!!!",
+      "order": 2,
+      "active": true
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "sku": "PF0001",
+      "name": "Fiji",
+      "detail": "Fiji",
+      "presentation": "",
+      "categoryId": 22,
+      "categoryName": "Sofa cama",
+      "categoryIds": [
+        22
+      ],
+      "categoryNames": [
+        "Sofa cama"
+      ],
+      "brand": "",
+      "vegano": false,
+      "kosher": false,
+      "publicPrice": 1489997,
+      "memberPrice": 1489997,
+      "installmentCount": 6,
+      "interestFreeInstallments": [
+        2,
+        3,
+        6
+      ],
+      "measures": [
+        {
+          "id": "measure-1788300051049",
+          "label": "2 cuerpos",
+          "width": 200,
+          "depth": 80,
+          "height": 120,
+          "unit": "cm",
+          "publicPrice": 1540000
+        },
+        {
+          "id": "measure-1788300124092",
+          "label": "1 cuerpo",
+          "width": 120,
+          "depth": 80,
+          "height": 120,
+          "unit": "cm",
+          "publicPrice": 980000
+        }
+      ],
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-productos-images-1-1786844587010-4649f7ab.png",
+      "images": [
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-productos-images-1-1786844587010-4649f7ab.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-productos-images-2-1786844592900-04a03e05.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-productos-images-3-1786844597476-c08db96e.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-productos-images-4-1786844602769-8349f2c6.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-pf0001-productos-images-5-1788530838846-8a476cb3.mp4"
+      ],
+      "fabricIds": [
+        3,
+        2,
+        1,
+        5,
+        4
+      ],
+      "relatedProductIds": [
+        2
+      ],
+      "fabricVariants": [
+        {
+          "fabricId": 3,
+          "fabricName": "Lexintong Chocolate",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-chocolate-1786846947155-6ab76b57.jpg",
+          "createdAt": "2026-09-04T14:08:00.327Z",
+          "updatedAt": "2026-09-04T14:08:00.327Z"
+        },
+        {
+          "fabricId": 2,
+          "fabricName": "Lexintong Grafito",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-grafito-1786846960544-8f28e6bc.jpg",
+          "createdAt": "2026-09-04T14:08:00.327Z",
+          "updatedAt": "2026-09-04T14:08:00.327Z"
+        },
+        {
+          "fabricId": 1,
+          "fabricName": "Lexintong Gris",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-gris-1786846970506-28828cbe.jpg",
+          "createdAt": "2026-09-04T14:08:00.327Z",
+          "updatedAt": "2026-09-04T14:08:00.327Z"
+        },
+        {
+          "fabricId": 5,
+          "fabricName": "Lexintong Natural",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+          "createdAt": "2026-09-04T14:08:00.327Z",
+          "updatedAt": "2026-09-04T14:08:00.327Z"
+        },
+        {
+          "fabricId": 4,
+          "fabricName": "Royal Tweed Chocolate",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-royal-tweed-chocolate-1786846993103-1b60e249.jpg",
+          "createdAt": "2026-09-04T14:08:00.327Z",
+          "updatedAt": "2026-09-04T14:08:00.327Z"
+        }
+      ],
+      "onlyMembers": false,
+      "status": "published",
+      "featured": true,
+      "viewsCount": 387,
+      "salesCount": 0,
+      "templateRowMap": {},
+      "createdAt": "2026-08-16T01:43:32.549Z",
+      "updatedAt": "2026-09-05T13:24:45.962Z",
+      "lotOffers": [
+        {
+          "id": 1,
+          "productId": 1,
+          "productSku": "PF0001",
+          "productName": "Fiji",
+          "fixedFabricId": 5,
+          "fixedFabricName": "Lexintong Natural",
+          "fixedMeasureId": "measure-1788300124092",
+          "fixedMeasureLabel": "1 cuerpo",
+          "useFabricImage": true,
+          "title": "Lote001 Fiji Natural 10 unidades",
+          "description": "",
+          "totalUnits": 10,
+          "reservedUnits": 1,
+          "availableUnits": 9,
+          "regularUnitPrice": 1500000,
+          "lotUnitPrice": 1350000,
+          "status": "open",
+          "onlyMembers": true,
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+          "createdAt": "2026-08-17T02:28:36.668Z",
+          "updatedAt": "2026-09-03T20:08:06.963Z"
+        }
+      ],
+      "activeLot": {
+        "id": 1,
+        "productId": 1,
+        "productSku": "PF0001",
+        "productName": "Fiji",
+        "fixedFabricId": 5,
+        "fixedFabricName": "Lexintong Natural",
+        "fixedMeasureId": "measure-1788300124092",
+        "fixedMeasureLabel": "1 cuerpo",
+        "useFabricImage": true,
+        "title": "Lote001 Fiji Natural 10 unidades",
+        "description": "",
+        "totalUnits": 10,
+        "reservedUnits": 1,
+        "availableUnits": 9,
+        "regularUnitPrice": 1500000,
+        "lotUnitPrice": 1350000,
+        "status": "open",
+        "onlyMembers": true,
+        "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+        "createdAt": "2026-08-17T02:28:36.668Z",
+        "updatedAt": "2026-09-03T20:08:06.963Z"
+      }
+    },
+    {
+      "id": 2,
+      "sku": "PF0002",
+      "name": "Tokio",
+      "detail": "Tokio",
+      "presentation": "",
+      "categoryId": 23,
+      "categoryName": "Futón",
+      "categoryIds": [
+        23,
+        22,
+        21
+      ],
+      "categoryNames": [
+        "Futón",
+        "Sofa cama",
+        "Sofa"
+      ],
+      "brand": "",
+      "vegano": false,
+      "kosher": false,
+      "publicPrice": 1980000,
+      "memberPrice": 1980000,
+      "installmentCount": 6,
+      "interestFreeInstallments": [
+        2,
+        4,
+        6
+      ],
+      "measures": [
+        {
+          "id": "measure-1788314321592",
+          "label": "2 cuerpos",
+          "width": 200,
+          "depth": 80,
+          "height": 130,
+          "unit": "cm",
+          "publicPrice": 1980000
+        },
+        {
+          "id": "measure-1788314351568",
+          "label": "1cuerpo",
+          "width": 120,
+          "depth": 80,
+          "height": 130,
+          "unit": "cm",
+          "publicPrice": 1450000
+        }
+      ],
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/tokio-productos-images-1-1788315426725-b53406b7.png",
+      "images": [
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/tokio-productos-images-1-1788315426725-b53406b7.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/tokio-productos-images-2-1788315435952-2ed20961.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/tokio-productos-images-3-1788315446134-dae66a7c.png",
+        "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/tokio-productos-images-4-1788315455709-01ac9b43.png"
+      ],
+      "fabricIds": [
+        3,
+        1,
+        4
+      ],
+      "relatedProductIds": [],
+      "fabricVariants": [
+        {
+          "fabricId": 3,
+          "fabricName": "Lexintong Chocolate",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/tokio-productos-lexintong-chocolate-1788315360518-d247578a.png",
+          "createdAt": "2026-09-02T02:18:07.152Z",
+          "updatedAt": "2026-09-02T02:18:07.152Z"
+        },
+        {
+          "fabricId": 1,
+          "fabricName": "Lexintong Gris",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/tokio-productos-lexintong-gris-1788315385996-9c347c1c.png",
+          "createdAt": "2026-09-02T02:18:07.152Z",
+          "updatedAt": "2026-09-02T02:18:07.152Z"
+        },
+        {
+          "fabricId": 4,
+          "fabricName": "Royal Tweed Chocolate",
+          "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/tokio-productos-royal-tweed-chocolate-1788315402988-a157b6b4.png",
+          "createdAt": "2026-09-02T02:18:07.152Z",
+          "updatedAt": "2026-09-02T02:18:07.152Z"
+        }
+      ],
+      "onlyMembers": false,
+      "status": "published",
+      "featured": true,
+      "viewsCount": 11,
+      "salesCount": 0,
+      "templateRowMap": {},
+      "createdAt": "2026-09-02T02:18:07.152Z",
+      "updatedAt": "2026-09-03T21:13:01.656Z",
+      "lotOffers": [],
+      "activeLot": null
+    }
+  ],
+  "productRelations": [
+    {
+      "productId": 1,
+      "relatedProductIds": [
+        2
+      ]
+    }
+  ],
+  "productLots": [
+    {
+      "id": 1,
+      "productId": 1,
+      "productSku": "PF0001",
+      "productName": "Fiji",
+      "fixedFabricId": 5,
+      "fixedFabricName": "Lexintong Natural",
+      "fixedMeasureId": "measure-1788300124092",
+      "fixedMeasureLabel": "1 cuerpo",
+      "useFabricImage": true,
+      "title": "Lote001 Fiji Natural 10 unidades",
+      "description": "",
+      "totalUnits": 10,
+      "reservedUnits": 1,
+      "availableUnits": 9,
+      "regularUnitPrice": 1500000,
+      "lotUnitPrice": 1350000,
+      "status": "open",
+      "onlyMembers": true,
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+      "createdAt": "2026-08-17T02:28:36.668Z",
+      "updatedAt": "2026-09-03T20:08:06.963Z"
+    }
+  ],
+  "productLotReservations": [
+    {
+      "id": 3,
+      "lotId": 1,
+      "userId": 7,
+      "userName": "Cliente 002",
+      "userEmail": "federicodiaz1981@gmail.com",
+      "lotTitle": "Lote001 Fiji Natural 10 unidades",
+      "productId": 1,
+      "productSku": "PF0001",
+      "productName": "Fiji",
+      "fixedFabricId": 5,
+      "fixedFabricName": "Lexintong Natural",
+      "lotImage": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+      "quantity": 1,
+      "unitPrice": 1350000,
+      "totalPrice": 1350000,
+      "status": "confirmed",
+      "confirmedAt": "2026-08-17T21:51:53.413Z",
+      "confirmedByUserId": 5,
+      "createdAt": "2026-08-17T21:46:18.017Z",
+      "updatedAt": "2026-08-17T21:51:53.413Z"
+    },
+    {
+      "id": 2,
+      "lotId": 1,
+      "userId": 7,
+      "userName": "Cliente 002",
+      "userEmail": "federicodiaz1981@gmail.com",
+      "lotTitle": "Lote001 Fiji Natural 10 unidades",
+      "productId": 1,
+      "productSku": "PF0001",
+      "productName": "Fiji",
+      "fixedFabricId": 5,
+      "fixedFabricName": "Lexintong Natural",
+      "lotImage": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+      "quantity": 1,
+      "unitPrice": 1350000,
+      "totalPrice": 1350000,
+      "status": "cancelled",
+      "cancelledAt": "2026-08-17T21:46:01.323Z",
+      "createdAt": "2026-08-17T21:12:02.423Z",
+      "updatedAt": "2026-08-17T21:46:01.323Z"
+    },
+    {
+      "id": 1,
+      "lotId": 1,
+      "userId": 7,
+      "userName": "Cliente 002",
+      "userEmail": "federicodiaz1981@gmail.com",
+      "lotTitle": "Lote001 Fiji Natural 10 unidades",
+      "productId": 1,
+      "productSku": "PF0001",
+      "productName": "Fiji",
+      "fixedFabricId": 5,
+      "fixedFabricName": "Lexintong Natural",
+      "lotImage": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products-fabric/fiji-pf0001-productos-lexintong-natural-1786846981882-69e04015.jpg",
+      "quantity": 1,
+      "unitPrice": 1350000,
+      "totalPrice": 1350000,
+      "status": "cancelled",
+      "cancelledAt": "2026-08-17T21:46:05.131Z",
+      "createdAt": "2026-08-17T20:18:53.929Z",
+      "updatedAt": "2026-08-17T21:46:05.131Z"
+    }
+  ],
+  "packs": [],
+  "brands": [],
+  "paymentMethods": [],
+  "fabrics": [
+    {
+      "id": 1,
+      "name": "Lexintong Gris",
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/fabrics/telas-image-1786841645755-553f1f2b.png",
+      "createdAt": "2026-08-16T00:54:22.508Z",
+      "updatedAt": "2026-08-16T00:54:22.508Z"
+    },
+    {
+      "id": 2,
+      "name": "Lexintong Grafito",
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/fabrics/telas-image-1786841679779-7062a566.png",
+      "createdAt": "2026-08-16T00:54:49.564Z",
+      "updatedAt": "2026-08-16T00:54:49.564Z"
+    },
+    {
+      "id": 3,
+      "name": "Lexintong Chocolate",
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/fabrics/telas-image-1786841713237-67c8b73f.png",
+      "createdAt": "2026-08-16T00:55:22.546Z",
+      "updatedAt": "2026-08-16T00:55:22.546Z"
+    },
+    {
+      "id": 4,
+      "name": "Royal Tweed Chocolate",
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/fabrics/telas-image-1786841738136-8c8a663d.png",
+      "createdAt": "2026-08-16T00:55:51.943Z",
+      "updatedAt": "2026-08-16T00:55:51.943Z"
+    },
+    {
+      "id": 5,
+      "name": "Lexintong Natural",
+      "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/fabrics/telas-image-1786841789244-3bef0c0c.png",
+      "createdAt": "2026-08-16T00:56:40.275Z",
+      "updatedAt": "2026-08-16T00:56:40.275Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": 21,
+      "name": "Sofa",
+      "slug": "sofa",
+      "visible": true,
+      "homeMenu": true,
+      "icon": "package"
+    },
+    {
+      "id": 22,
+      "name": "Sofa cama",
+      "slug": "sofa-cama",
+      "visible": true,
+      "homeMenu": true,
+      "icon": "package"
+    },
+    {
+      "id": 23,
+      "name": "Futón",
+      "slug": "futon",
+      "visible": true,
+      "homeMenu": true,
+      "icon": "package"
+    }
+  ],
+  "users": [
+    {
+      "id": 4,
+      "name": "Muestra Inactiva",
+      "email": "inactive@demo.com",
+      "role": "customer",
+      "canSeePrices": true,
+      "active": false
+    },
+    {
+      "id": 5,
+      "authUserId": "08f1b110-8458-443a-b41b-bba1ac856c20",
+      "name": "Admin",
+      "email": "admin@admin.com",
+      "role": "admin",
+      "canSeePrices": true,
+      "active": true
+    },
+    {
+      "id": 6,
+      "authUserId": "682eb58b-eeb8-4f06-a2b3-185dbd5cbd75",
+      "name": "Cliente 001",
+      "email": "fediaz31|00@gmail.com",
+      "role": "Cliente",
+      "canSeePrices": false,
+      "active": true
+    },
+    {
+      "id": 7,
+      "authUserId": "87cb1c23-1b12-4b5a-be04-884d2bc878b9",
+      "name": "Cliente 002",
+      "email": "federicodiaz1981@gmail.com",
+      "role": "Cliente",
+      "canSeePrices": false,
+      "active": true
+    },
+    {
+      "id": 8,
+      "authUserId": "9f09b405-96e3-4a55-a125-e0fd7bd5a320",
+      "name": "Cliente 003",
+      "email": "fedediazrock@gmail.com",
+      "role": "Cliente",
+      "canSeePrices": false,
+      "active": true
+    }
+  ],
+  "ping": true,
+  "nextIds": {
+    "pack": 3,
+    "user": 6,
+    "banner": 4,
+    "fabric": 1,
+    "product": 21,
+    "category": 21,
+    "heroSlide": 6
+  }
+}
