@@ -10,9 +10,10 @@ import type { PackItem } from "@/domain/site-content";
 import { PackDetailModal } from "@/components/site/pack-detail-modal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, publicAsset } from "@/lib/catalog";
+import { resolveProductUnitPrice } from "@/lib/pricing";
 
 function getSavings(pack: PackItem) {
-  const baseTotal = pack.items.reduce((sum, item) => sum + item.quantity * item.product.publicPrice, 0);
+  const baseTotal = pack.items.reduce((sum, item) => sum + item.quantity * resolveProductUnitPrice(item.product), 0);
   return Math.max(0, baseTotal - pack.publicPrice);
 }
 

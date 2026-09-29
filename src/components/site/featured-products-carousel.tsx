@@ -9,7 +9,8 @@ import { motion } from "motion/react";
 import type { ProductItem } from "@/domain/site-content";
 import { formatCurrency, isNewArrival, isVideoAsset, publicAsset } from "@/lib/catalog";
 import { appendReturnTo } from "@/lib/navigation";
-import { resolveProductUnitPrice } from "@/lib/pricing";
+import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+import { ProductOfferPrice } from "@/components/site/product-offer-price";
 import { ProductDetailModal } from "@/components/site/product-detail-modal";
 import { Button } from "@/components/ui/button";
 
@@ -35,8 +36,9 @@ function getNewLabel(product: ProductItem) {
 }
 
 function getSpecialPrice(product: ProductItem) {
-  if (product.memberPrice > 0 && product.memberPrice < product.publicPrice) {
-    return product.memberPrice;
+  const cashPrice = resolveProductCashPrice(product);
+  if (cashPrice > 0 && cashPrice < resolveProductUnitPrice(product)) {
+    return cashPrice;
   }
 
   return null;
@@ -76,6 +78,7 @@ function FeaturedCard({
   const variantCount = getVariantCount(product);
   const specialPrice = getSpecialPrice(product);
   const unitPrice = resolveProductUnitPrice(product);
+  const offerActive = isProductOfferActive(product);
   const detailHref = appendReturnTo(`/producto/${product.sku}`, returnTo);
 
   return (
@@ -154,9 +157,15 @@ function FeaturedCard({
             <h3 className={`line-clamp-2 font-medium leading-6 text-[var(--pf-text)] ${compact ? "text-[0.92rem]" : "text-[0.98rem]"}`}>
               {product.name}
             </h3>
-            <p className={`mt-2 font-black tracking-[-0.03em] text-[var(--pf-text)] ${compact ? "text-[1rem]" : "text-[1.02rem]"}`}>
-              {formatCurrency(unitPrice)}
-            </p>
+            <ProductOfferPrice
+              productId={product.id}
+              initialListPrice={product.publicPrice}
+              offerPrice={unitPrice}
+              offerActive={offerActive}
+              className={`mt-2 font-black tracking-[-0.03em] text-[var(--pf-text)] ${compact ? "text-[1rem]" : "text-[1.02rem]"}`}
+              listPriceClassName="text-[0.78rem]"
+              offerPriceClassName="text-[var(--pf-accent)]"
+            />
             {specialPrice ? (
               <p className="mt-1 text-[11px] font-semibold text-[var(--pf-primary-darker)]">
                 Transferencia / efectivo {formatCurrency(specialPrice)}

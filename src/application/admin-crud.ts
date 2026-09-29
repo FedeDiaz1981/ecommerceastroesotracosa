@@ -23,6 +23,7 @@ export type AdminTableKey =
 export type AdminFieldKind =
   | "text"
   | "number"
+  | "date"
   | "boolean"
   | "textarea"
   | "pack_products"
@@ -142,6 +143,10 @@ function fileField(key: string, label: string, required = false, helper?: string
   return { key, label, kind: "file", required, helper, hidden };
 }
 
+function dateField(key: string, label: string, helper?: string): AdminFieldDefinition {
+  return { key, label, kind: "date", helper };
+}
+
 function imageGalleryField(
   key: string,
   label: string,
@@ -236,7 +241,7 @@ export function getAdminTableDefinitions(content: SiteContentDocument): AdminTab
     {
       key: "products",
       label: "Productos",
-      description: "Catalogo principal de productos y precios.",
+      description: "Catalogo principal de productos. Los precios se configuran por medida.",
       idField: "id",
       rowLabelField: "name",
       rows: (content.products ?? []).map((product) => ({
@@ -245,10 +250,11 @@ export function getAdminTableDefinitions(content: SiteContentDocument): AdminTab
       })),
       columns: [
         { key: "id", label: "ID" },
+        { key: "sortOrder", label: "Posición" },
         { key: "sku", label: "SKU" },
         { key: "name", label: "Nombre" },
         { key: "brand", label: "Marca" },
-        { key: "publicPrice", label: "Precio" },
+        { key: "publicPrice", label: "Desde" },
         { key: "featuredPriority", label: "Prioridad" },
         { key: "featured", label: "Destacado" },
         { key: "active", label: "Activo" },
@@ -257,15 +263,15 @@ export function getAdminTableDefinitions(content: SiteContentDocument): AdminTab
       ],
       fields: [
         numberField("id", "ID", true, "Uso interno", true, true),
+        numberField("sortOrder", "Posición", true, "Define el puesto del producto en el listado."),
         textField("sku", "SKU", true, "Uso interno", true, true),
         textField("name", "Nombre", true),
         textareaField("detail", "Detalle", true),
         multiselectField("categoryIds", "Categorias", visibleCategoryOptions, "Elegi una o mas categorias visibles."),
-        numberField("price", "Precio", true),
         productMeasuresField(
           "measures",
           "Medidas y precios",
-          "Cargá una o más medidas. Cada medida puede tener su propio precio.",
+          "Cada medida define sus precios, oferta, programación e imagen del sistema de apertura.",
         ),
         productInstallmentsField(
           "installments",
@@ -279,7 +285,7 @@ export function getAdminTableDefinitions(content: SiteContentDocument): AdminTab
           "Marcá en qué telas está disponible este producto y cargá una foto para cada una.",
         ),
         booleanField("onlyMembers", "Sólo miembros", "Si está activo, sólo lo verán usuarios logueados."),
-        imageGalleryField("images", "Imagenes", "Subí hasta 5 fotos del producto."),
+        imageGalleryField("images", "Imágenes y videos", "Subí hasta 5 archivos. Los videos pueden pesar hasta 20 MB."),
         textField("brand", "Marca", false, "Uso interno", true, true),
         textField("presentation", "Presentacion", true, "Uso interno", true, true),
         textField("status", "Estado", true, "Uso interno", true, true),

@@ -1,5 +1,4 @@
-﻿import Image from "next/image";
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { ReactNode } from "react";
 import { CartAddButton } from "@/components/cart/cart-add-button";
 import { useViewer } from "@/components/auth/viewer-provider";
@@ -9,10 +8,18 @@ import { ProductFabricGallery } from "@/components/site/product-fabric-gallery";
 import { ProductImageCarousel } from "@/components/site/product-image-carousel";
 import { ProductMeasurePicker } from "@/components/site/product-measure-picker";
 import { ProductDynamicPrice } from "@/components/site/product-dynamic-price";
+import { ProductOfferPrice } from "@/components/site/product-offer-price";
+import { ProductMercadoPagoFinancing } from "@/components/site/product-mercado-pago-financing";
+import { ProductOpeningSystem } from "@/components/site/product-opening-system";
 import { getSiteContent } from "@/infrastructure/site-content.repository";
-import { publicAsset } from "@/lib/catalog";
+import { formatCurrency } from "@/lib/catalog";
 import { normalizeReturnTo } from "@/lib/navigation";
-import { resolveProductUnitPrice } from "@/lib/pricing";
+import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+
+const MERCADO_PAGO_API_BASE_URL = String(
+  import.meta.env.PUBLIC_MERCADO_PAGO_API_BASE_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:3000" : ""),
+).replace(/\/$/, "");
+const MERCADO_PAGO_PREFERENCE_ENDPOINT = `${MERCADO_PAGO_API_BASE_URL}/api/mercado-pago/preference`;
 
 function isVisibleProduct(
   product: {
@@ -88,6 +95,9 @@ export default function ProductPageApp({
   const imageList = product.images?.length ? product.images : product.image ? [product.image] : [];
   const heroImages = imageList.length > 0 ? imageList : [product.image ?? ""];
   const heroPrice = resolveProductUnitPrice(product, product.measures?.[0] ?? null);
+  const initialListPrice = product.measures?.[0]?.publicPrice ?? product.publicPrice;
+  const initialCashPrice = resolveProductCashPrice(product, product.measures?.[0] ?? null);
+  const offerActive = isProductOfferActive(product);
   const fabricCount = product.fabricVariants?.length ?? product.fabricIds?.length ?? 0;
 
   return (
@@ -107,16 +117,34 @@ export default function ProductPageApp({
           <h1 className="mt-6 font-serif text-[clamp(3rem,8vw,7rem)] leading-[0.9] tracking-[-0.06em] text-[var(--pf-text)]">
             {product.name}
           </h1>
-          <div className="mx-auto mt-8 max-w-[34rem] bg-[#111111] px-6 py-5 text-white sm:px-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">Precio</p>
-            <p className="mt-2 font-serif text-[clamp(2.4rem,5vw,4rem)] leading-none">
-              <ProductDynamicPrice productId={product.id} initialPrice={heroPrice} />
-            </p>
+          <div className="mx-auto mt-8 grid max-w-[44rem] text-white sm:grid-cols-2">
+            <div className="bg-[#245f40] px-6 py-5 sm:px-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/70">Precio en efectivo</p>
+              <p className="mt-2 font-serif text-[clamp(2rem,4vw,3.25rem)] leading-none">
+                <ProductDynamicPrice productId={product.id} initialPrice={initialCashPrice} priceKey="cashPrice" />
+              </p>
+            </div>
+            <div className="border-t border-white/15 bg-[#111111] px-6 py-5 sm:border-l sm:border-t-0 sm:px-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">Precio de lista</p>
+              <ProductOfferPrice
+                productId={product.id}
+                initialListPrice={initialListPrice}
+                offerPrice={heroPrice}
+                offerActive={offerActive}
+                className="mt-2 font-serif text-[clamp(2rem,4vw,3.25rem)] leading-none text-white"
+                listPriceClassName="text-[1.15rem] text-white/55"
+                offerPriceClassName="text-white"
+              />
+            </div>
           </div>
-          <div className="mt-6 flex justify-center">
-            <CartAddButton product={product} className="h-12 px-6 text-sm uppercase tracking-[0.22em]">
+          <div className="mx-auto mt-6 grid w-full max-w-[29rem] grid-cols-2 gap-3">
+            <CartAddButton product={product} className="h-12 min-w-0 px-3 text-[11px] uppercase tracking-[0.12em] sm:px-6 sm:text-sm sm:tracking-[0.22em]">
               Agregar al carrito
             </CartAddButton>
+            <ProductMercadoPagoFinancing
+              product={product}
+              preferenceEndpoint={MERCADO_PAGO_PREFERENCE_ENDPOINT}
+            />
           </div>
         </section>
 
@@ -148,25 +176,7 @@ export default function ProductPageApp({
           </div>
         </section>
 
-        <section className="border-b border-[rgba(0,0,0,0.08)] py-12">
-          <SectionTitle
-            title="Sistema de apertura"
-            description="Dibujos de ejemplo meramente ilustrativos."
-          />
-
-          <div className="mt-10 flex justify-center">
-            <div className="relative w-full max-w-5xl overflow-hidden bg-transparent px-6 py-8 sm:px-10 sm:py-12">
-              <Image
-                src={publicAsset("/assets/images/medidas/02.svg")}
-                alt="Sistema de apertura"
-                width={1200}
-                height={900}
-                className="h-auto w-full object-contain"
-                priority={false}
-              />
-            </div>
-          </div>
-        </section>
+        <ProductOpeningSystem productId={product.id} initialMeasure={product.measures?.[0] ?? null} />
 
         <section className="border-y border-[rgba(0,0,0,0.08)] py-12">
           <SectionTitle
@@ -195,9 +205,18 @@ export default function ProductPageApp({
             {[
               { label: "Marca", value: product.brand },
               { label: "Categoria", value: product.categoryName },
+              { label: "Precio en efectivo", value: <ProductDynamicPrice productId={product.id} initialPrice={initialCashPrice} priceKey="cashPrice" /> },
               {
-                label: "Precio",
-                value: <ProductDynamicPrice productId={product.id} initialPrice={heroPrice} />,
+                label: offerActive ? "Oferta" : "Precio de lista",
+                value: (
+                  <ProductOfferPrice
+                    productId={product.id}
+                    initialListPrice={initialListPrice}
+                    offerPrice={heroPrice}
+                    offerActive={offerActive}
+                    offerPriceClassName="font-bold text-[var(--pf-accent)]"
+                  />
+                ),
               },
               { label: "Telas", value: `${fabricCount} variantes` },
               { label: "Solo miembros", value: product.onlyMembers ? "Si" : "No" },

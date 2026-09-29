@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { appendFileSync } from "node:fs";
 import { postgresPool } from "@/infrastructure/db/postgres";
 import { normalizeText } from "@/lib/catalog";
+import { isProductOfferActive } from "@/lib/pricing";
 import {
   downloadOrderExcelTemplate,
   getActiveOrderExcelTemplate,
@@ -35,6 +36,11 @@ type ProductDbRow = {
   presentation: string;
   public_price: number;
   member_price: number;
+  offer_price: number | null;
+  offer_mode: string | null;
+  offer_weekdays: unknown;
+  offer_start_date: string | null;
+  offer_end_date: string | null;
   image: string | null;
   template_row_map: unknown;
 };
@@ -381,7 +387,7 @@ async function resolveRequestedLines(items: OrderExcelRequestItem[], viewer: Ord
     productSkus.length > 0
       ? postgresPool.query<ProductDbRow>(
           `
-            select sku, name, brand, presentation, public_price, member_price, image, template_row_map
+            select sku, name, brand, presentation, public_price, member_price, offer_price, offer_mode, offer_weekdays, offer_start_date, offer_end_date, image, template_row_map
             from products
             where deleted_at is null
               and sku = any($1::text[])
@@ -443,9 +449,22 @@ async function resolveRequestedLines(items: OrderExcelRequestItem[], viewer: Ord
     }
 
     const product = item.sku ? productMap.get(item.sku) : null;
-    const publicPrice = Math.max(0, Number(product?.public_price ?? fallback.publicPrice ?? 0) || 0);
+    const basePublicPrice = Math.max(0, Number(product?.public_price ?? fallback.publicPrice ?? 0) || 0);
+    const offerActive = product
+      ? isProductOfferActive({
+          publicPrice: basePublicPrice,
+          offerPrice: product.offer_price ?? undefined,
+          offerMode: (["off", "manual", "weekly", "period"].includes(String(product.offer_mode))
+            ? product.offer_mode
+            : "off") as "off" | "manual" | "weekly" | "period",
+          offerWeekdays: Array.isArray(product.offer_weekdays) ? product.offer_weekdays.map(Number) : [],
+          offerStartDate: product.offer_start_date ?? undefined,
+          offerEndDate: product.offer_end_date ?? undefined,
+        })
+      : false;
+    const publicPrice = offerActive ? Number(product?.offer_price) : basePublicPrice;
     const memberPrice = Math.max(0, Number(product?.member_price ?? fallback.memberPrice ?? publicPrice) || publicPrice);
-    const unitPrice = viewer.authenticated && viewer.canSeePrices && memberPrice > 0 ? memberPrice : publicPrice;
+    const unitPrice = offerActive ? publicPrice : viewer.authenticated && viewer.canSeePrices && memberPrice > 0 ? memberPrice : publicPrice;
 
     return {
       kind: "product" as const,

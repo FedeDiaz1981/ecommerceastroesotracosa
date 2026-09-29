@@ -6,12 +6,13 @@ import { useCart } from "@/components/cart/cart-context";
 import { ProductDetailModal } from "@/components/site/product-detail-modal";
 import type { PackItem } from "@/domain/site-content";
 import { formatCurrency, publicAsset } from "@/lib/catalog";
+import { resolveProductUnitPrice } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 function getBaseTotal(pack: PackItem) {
-  return pack.items.reduce((sum, item) => sum + item.quantity * item.product.publicPrice, 0);
+  return pack.items.reduce((sum, item) => sum + item.quantity * resolveProductUnitPrice(item.product), 0);
 }
 
 export function PackDetailModal({

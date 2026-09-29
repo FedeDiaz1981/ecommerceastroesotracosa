@@ -17,3 +17,7 @@ export async function deleteAdminRecord(formData: FormData) {
 export async function deleteAdminRecords(formData: FormData) {
   notifyPendingBackend("Borrado masivo", getTableLabel(formData));
 }
+
+export async function reorderAdminProducts(_formData: FormData) {
+  // La versión estática conserva el orden en pantalla; la versión Next lo persiste en PostgreSQL.
+}

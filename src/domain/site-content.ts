@@ -48,8 +48,11 @@ export interface HeaderNavigation {
   sections: NavSection[];
 }
 
+export type ProductOfferMode = "off" | "manual" | "weekly" | "period";
+
 export interface ProductItem {
   id: number;
+  sortOrder?: number;
   sku: string;
   name: string;
   detail: string;
@@ -64,6 +67,12 @@ export interface ProductItem {
   testeadoEnAnimales?: boolean;
   publicPrice: number;
   memberPrice: number;
+  cashPrice: number;
+  offerPrice?: number;
+  offerMode?: ProductOfferMode;
+  offerWeekdays?: number[];
+  offerStartDate?: string;
+  offerEndDate?: string;
   installmentCount?: number;
   interestFreeInstallments?: number[];
   measures?: ProductMeasure[];
@@ -97,6 +106,14 @@ export interface ProductMeasure {
   height?: number;
   unit?: string;
   publicPrice: number;
+  cashPrice?: number;
+  offerPrice?: number;
+  offerMode?: ProductOfferMode;
+  offerWeekdays?: number[];
+  offerStartDate?: string;
+  offerEndDate?: string;
+  openingSystemImage?: string;
+  showOpeningSystem?: boolean;
 }
 
 export interface PackIncludedProduct {

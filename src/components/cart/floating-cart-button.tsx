@@ -78,14 +78,16 @@ export function FloatingCartButton() {
   const { hydrated, isOpen, toggleCart, totalItems } = useCart();
   const isHeaderOutOfFocus = useHeaderOutOfFocus();
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [isAdminPage, setIsAdminPage] = useState(false);
 
   useEffect(() => {
     setPortalTarget(document.body);
+    setIsAdminPage(Boolean(document.querySelector(".pf-admin")));
   }, []);
 
   const buttonMode = useMemo(() => (isHeaderOutOfFocus ? "expanded" : "compact"), [isHeaderOutOfFocus]);
 
-  if (!hydrated || !portalTarget) {
+  if (!hydrated || !portalTarget || isOpen || isAdminPage) {
     return null;
   }
 

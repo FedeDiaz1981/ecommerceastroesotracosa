@@ -445,6 +445,7 @@
   "products": [
     {
       "id": 1,
+      "sortOrder": 1,
       "sku": "PF0001",
       "name": "Fiji",
       "detail": "Fiji",
@@ -462,6 +463,7 @@
       "kosher": false,
       "publicPrice": 1489997,
       "memberPrice": 1489997,
+      "cashPrice": 1489997,
       "installmentCount": 6,
       "interestFreeInstallments": [
         2,
@@ -476,7 +478,9 @@
           "depth": 80,
           "height": 120,
           "unit": "cm",
-          "publicPrice": 1540000
+          "publicPrice": 1540000,
+          "openingSystemImage": "/assets/images/medidas/02.svg",
+          "showOpeningSystem": true
         },
         {
           "id": "measure-1788300124092",
@@ -485,7 +489,9 @@
           "depth": 80,
           "height": 120,
           "unit": "cm",
-          "publicPrice": 980000
+          "publicPrice": 980000,
+          "openingSystemImage": "/assets/images/medidas/02.svg",
+          "showOpeningSystem": true
         }
       ],
       "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/fiji-productos-images-1-1786844587010-4649f7ab.png",
@@ -602,6 +608,7 @@
     },
     {
       "id": 2,
+      "sortOrder": 2,
       "sku": "PF0002",
       "name": "Tokio",
       "detail": "Tokio",
@@ -623,6 +630,7 @@
       "kosher": false,
       "publicPrice": 1980000,
       "memberPrice": 1980000,
+      "cashPrice": 1980000,
       "installmentCount": 6,
       "interestFreeInstallments": [
         2,
@@ -637,7 +645,9 @@
           "depth": 80,
           "height": 130,
           "unit": "cm",
-          "publicPrice": 1980000
+          "publicPrice": 1980000,
+          "openingSystemImage": "/assets/images/medidas/02.svg",
+          "showOpeningSystem": true
         },
         {
           "id": "measure-1788314351568",
@@ -646,7 +656,9 @@
           "depth": 80,
           "height": 130,
           "unit": "cm",
-          "publicPrice": 1450000
+          "publicPrice": 1450000,
+          "openingSystemImage": "/assets/images/medidas/02.svg",
+          "showOpeningSystem": true
         }
       ],
       "image": "https://pguhaepyzwmlrqctwybu.supabase.co/storage/v1/object/public/esOtraCosa/products/tokio-productos-images-1-1788315426725-b53406b7.png",

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { deleteAdminRecord, deleteAdminRecords, saveAdminRecord } from "@/app/admin/actions";
+import { deleteAdminRecord, deleteAdminRecords, reorderAdminProducts, saveAdminRecord } from "@/app/admin/actions";
 import type {
   AdminCrudViewModel,
   AdminFieldDefinition,
@@ -31,6 +32,14 @@ type ProductMeasureDraft = {
   height: number | "";
   unit: string;
   publicPrice: number | "";
+  cashPrice: number | "";
+  offerPrice: number | "";
+  offerMode: "off" | "manual" | "weekly" | "period";
+  offerWeekdays: number[];
+  offerStartDate: string;
+  offerEndDate: string;
+  openingSystemImage: string;
+  showOpeningSystem: boolean;
 };
 type ProductInstallmentDraft = { count: number | ""; interestFree: boolean };
 
@@ -58,6 +67,66 @@ type UploadState = {
   error?: string;
   fileName?: string;
 };
+
+const ADMIN_PAGE_SIZE = 10;
+
+const MAX_PRODUCT_VIDEO_SIZE_BYTES = 20 * 1024 * 1024;
+const PRODUCT_IMAGE_ACCEPT = ".jpg,.jpeg,.png,.webp,.gif,.avif";
+const PRODUCT_MEDIA_ACCEPT = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".avif",
+  ".mp4",
+  ".webm",
+  ".mov",
+  ".m4v",
+  ".ogg",
+].join(",");
+const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
+const PRODUCT_VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "ogg"]);
+const PRODUCT_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+const PRODUCT_VIDEO_MIME_TYPES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-m4v",
+  "video/ogg",
+]);
+
+function validateProductMediaFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const isImage = PRODUCT_IMAGE_MIME_TYPES.has(file.type) && PRODUCT_IMAGE_EXTENSIONS.has(extension);
+  const isVideo = PRODUCT_VIDEO_MIME_TYPES.has(file.type) && PRODUCT_VIDEO_EXTENSIONS.has(extension);
+
+  if (!isImage && !isVideo) {
+    return "Formato no permitido. Usá JPG, PNG, WEBP, GIF, AVIF, MP4, WEBM, MOV, M4V u OGG.";
+  }
+
+  if (isVideo && file.size > MAX_PRODUCT_VIDEO_SIZE_BYTES) {
+    return "El video supera el máximo permitido de 20 MB.";
+  }
+
+  return "";
+}
+
+function validateProductImageFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+  if (!PRODUCT_IMAGE_MIME_TYPES.has(file.type) || !PRODUCT_IMAGE_EXTENSIONS.has(extension)) {
+    return "Formato no permitido. Usá JPG, PNG, WEBP, GIF o AVIF.";
+  }
+
+  return "";
+}
 
 function getInitials(name: string) {
   const parts = String(name || "")
@@ -191,6 +260,11 @@ function emptyDraftFor(table: AdminTableDefinition): DraftRecord {
   const draft: DraftRecord = {};
 
   for (const field of table.fields) {
+    if (table.key === "products" && field.key === "offerMode") {
+      draft[field.key] = "off";
+      continue;
+    }
+
     if (field.kind === "boolean") {
       draft[field.key] = ["active", "visible", "homeMenu"].includes(field.key) || (table.key === "product_lots" && field.key === "onlyMembers");
       continue;
@@ -399,7 +473,7 @@ function serializeFabricVariants(values: { fabricId: number; image: string; orde
   return JSON.stringify(values.map((item, index) => ({ ...item, order: index + 1 })));
 }
 
-function parseProductMeasures(value: unknown): ProductMeasureDraft[] {
+function parseProductMeasures(value: unknown, fallback?: DraftRecord): ProductMeasureDraft[] {
   if (typeof value !== "string" || !value.trim()) return [];
   try {
     const parsed = JSON.parse(value) as unknown[];
@@ -415,6 +489,14 @@ function parseProductMeasures(value: unknown): ProductMeasureDraft[] {
         height: candidate.height == null || candidate.height === "" ? "" : Number(candidate.height),
         unit: String(candidate.unit ?? "cm"),
         publicPrice: candidate.publicPrice == null || candidate.publicPrice === "" ? "" : Number(candidate.publicPrice),
+        cashPrice: candidate.cashPrice == null || candidate.cashPrice === "" ? Number(fallback?.cashPrice ?? candidate.publicPrice ?? "") || "" : Number(candidate.cashPrice),
+        offerPrice: candidate.offerPrice == null || candidate.offerPrice === "" ? Number(fallback?.offerPrice ?? "") || "" : Number(candidate.offerPrice),
+        offerMode: ["off", "manual", "weekly", "period"].includes(String(candidate.offerMode ?? fallback?.offerMode)) ? String(candidate.offerMode ?? fallback?.offerMode) as ProductMeasureDraft["offerMode"] : "off",
+        offerWeekdays: Array.isArray(candidate.offerWeekdays) ? candidate.offerWeekdays.map(Number).filter((day) => day >= 0 && day <= 6) : Array.isArray(fallback?.offerWeekdays) ? fallback.offerWeekdays.map(Number).filter((day) => day >= 0 && day <= 6) : [],
+        offerStartDate: candidate.offerStartDate ? String(candidate.offerStartDate).slice(0, 10) : String(fallback?.offerStartDate ?? "").slice(0, 10),
+        offerEndDate: candidate.offerEndDate ? String(candidate.offerEndDate).slice(0, 10) : String(fallback?.offerEndDate ?? "").slice(0, 10),
+        openingSystemImage: String(candidate.openingSystemImage ?? "").trim(),
+        showOpeningSystem: candidate.showOpeningSystem !== false,
       }];
     });
   } catch {
@@ -630,7 +712,7 @@ function getActiveCount(rows: Record<string, unknown>[]) {
 }
 
 function getMaxOrder(rows: Record<string, unknown>[]) {
-  const keys = ["order", "order_index", "sort_order", "position"];
+  const keys = ["order", "sortOrder", "order_index", "sort_order", "position"];
 
   let max = 0;
 
@@ -871,6 +953,16 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [bulkDeleteState, setBulkDeleteState] = useState<BulkDeleteState | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [draggedProductId, setDraggedProductId] = useState<number | null>(null);
+  const [dragOverProductId, setDragOverProductId] = useState<number | null>(null);
+  const [reorderSaving, setReorderSaving] = useState(false);
+  const [productOrder, setProductOrder] = useState<number[]>(() =>
+    ((tables.find((table) => table.key === "products")?.rows as Record<string, unknown>[] | undefined) ?? [])
+      .slice()
+      .sort((left, right) => Number(left.sortOrder ?? left.id) - Number(right.sortOrder ?? right.id))
+      .map((row) => Number(row.id)),
+  );
   const selectAllRef = useRef<HTMLInputElement | null>(null);
 
   const selectedTable = useMemo(
@@ -878,7 +970,30 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     [selectedTableKey, tables],
   );
 
-  const selectedRows = useMemo(() => (selectedTable?.rows as Record<string, unknown>[]) ?? [], [selectedTable]);
+  const modelProductOrder = useMemo(
+    () =>
+      ((tables.find((table) => table.key === "products")?.rows as Record<string, unknown>[] | undefined) ?? [])
+        .slice()
+        .sort((left, right) => Number(left.sortOrder ?? left.id) - Number(right.sortOrder ?? right.id))
+        .map((row) => Number(row.id)),
+    [tables],
+  );
+  const modelProductOrderKey = modelProductOrder.join(",");
+  const selectedRows = useMemo<Record<string, unknown>[]>(() => {
+    const rows = ((selectedTable?.rows as Record<string, unknown>[]) ?? []).slice();
+
+    if (selectedTable?.key !== "products") {
+      return rows;
+    }
+
+    const knownIds = new Set(productOrder);
+    const completeOrder = [...productOrder, ...rows.map((row) => Number(row.id)).filter((id) => !knownIds.has(id))];
+    const positionById = new Map(completeOrder.map((id, index) => [id, index]));
+
+    return rows
+      .sort((left, right) => (positionById.get(Number(left.id)) ?? Number.MAX_SAFE_INTEGER) - (positionById.get(Number(right.id)) ?? Number.MAX_SAFE_INTEGER))
+      .map((row) => ({ ...row, sortOrder: (positionById.get(Number(row.id)) ?? 0) + 1 }));
+  }, [productOrder, selectedTable]);
   const fieldMap = useMemo(
     () => new Map((selectedTable?.fields ?? []).map((field) => [field.key, field] as const)),
     [selectedTable],
@@ -904,7 +1019,12 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     return queryFilteredRows.filter((row) => isVisibleAdminRow(selectedTable.key, row));
   }, [query, selectedRows, selectedTable.key]);
 
-  const visibleRowIds = useMemo(() => visibleRows.map((row) => getRowId(selectedTable, row)), [selectedTable, visibleRows]);
+  const totalPages = Math.max(1, Math.ceil(visibleRows.length / ADMIN_PAGE_SIZE));
+  const paginatedRows = useMemo(
+    () => visibleRows.slice((currentPage - 1) * ADMIN_PAGE_SIZE, currentPage * ADMIN_PAGE_SIZE),
+    [currentPage, visibleRows],
+  );
+  const visibleRowIds = useMemo(() => paginatedRows.map((row) => getRowId(selectedTable, row)), [paginatedRows, selectedTable]);
   const selectedRowIdSet = useMemo(() => new Set(selectedRowIds), [selectedRowIds]);
   const selectedVisibleCount = useMemo(
     () => visibleRowIds.filter((rowId) => selectedRowIdSet.has(rowId)).length,
@@ -920,6 +1040,18 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     () => Object.values(uploadStates).some((uploadState) => uploadState.loading),
     [uploadStates],
   );
+
+  useEffect(() => {
+    setProductOrder(modelProductOrder);
+  }, [modelProductOrderKey]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, selectedTableKey]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -995,6 +1127,41 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     setSelectedRowId((current) => (current === rowId ? "" : current));
   }
 
+  async function handleProductDrop(targetProductId: number) {
+    if (!draggedProductId || draggedProductId === targetProductId || query.trim() || reorderSaving) {
+      setDraggedProductId(null);
+      setDragOverProductId(null);
+      return;
+    }
+
+    const previousOrder = productOrder;
+    const nextOrder = productOrder.filter((id) => id !== draggedProductId);
+    const targetIndex = nextOrder.indexOf(targetProductId);
+
+    if (targetIndex < 0) {
+      setDraggedProductId(null);
+      setDragOverProductId(null);
+      return;
+    }
+
+    nextOrder.splice(targetIndex, 0, draggedProductId);
+    setProductOrder(nextOrder);
+    setDraggedProductId(null);
+    setDragOverProductId(null);
+    setReorderSaving(true);
+
+    try {
+      const formData = new FormData();
+      formData.set("ids_json", JSON.stringify(nextOrder));
+      await reorderAdminProducts(formData);
+    } catch (error) {
+      setProductOrder(previousOrder);
+      window.alert(error instanceof Error ? error.message : "No se pudo guardar el nuevo orden.");
+    } finally {
+      setReorderSaving(false);
+    }
+  }
+
   async function handleConfirmReservation(row: Record<string, unknown>) {
     const reservationId = Number(row.id);
     if (!reservationId) {
@@ -1048,10 +1215,14 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     setPackSearch("");
     setFileNames({});
     setUploadStates({});
+    const draft = emptyDraftFor(table);
+    if (table.key === "products") {
+      draft.sortOrder = selectedRows.length + 1;
+    }
     setEditor({
       tableKey: table.key,
       rowId: "",
-      draft: emptyDraftFor(table),
+      draft,
     });
   }
 
@@ -1083,8 +1254,8 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
 
   return (
     <main className="pf-admin min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,252,246,0.98),_rgba(244,235,221,0.96)_44%,_rgba(232,218,194,0.98))] text-[var(--pf-text)]">
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col xl:flex-row">
-        <aside className="border-b border-[rgba(200,154,21,0.26)] bg-[#0b0b0b] px-4 py-5 text-[#fbf8f2] shadow-[inset_-1px_0_0_rgba(200,154,21,0.14)] xl:w-[300px] xl:border-b-0 xl:border-r xl:px-5 xl:py-6">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col xl:flex-row">
+        <aside className="border-b border-[rgba(200,154,21,0.26)] bg-[#0b0b0b] px-4 py-5 text-[#fbf8f2] shadow-[inset_-1px_0_0_rgba(200,154,21,0.14)] xl:w-[300px] xl:shrink-0 xl:border-b-0 xl:border-r xl:px-5 xl:py-6">
           <div className="rounded-[28px] border border-[rgba(200,154,21,0.18)] bg-[rgba(255,255,255,0.04)] p-4 shadow-[0_20px_50px_rgba(29,24,20,0.18)]">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,var(--pf-secondary-dark)_0%,var(--pf-primary)_100%)] text-lg font-black tracking-tight text-white shadow-[0_8px_18px_rgba(200,154,21,0.22)]">
@@ -1096,7 +1267,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
             </div>
           </div>
 
-          <nav className="mt-6 space-y-5">
+          <nav className="mt-4 max-h-[42svh] space-y-5 overflow-y-auto pr-1 xl:mt-6 xl:max-h-none xl:overflow-visible">
             {sidebarSections.map((section) => {
               const sectionTables = section.keys
                 .map((key) => tables.find((table) => table.key === key))
@@ -1153,9 +1324,9 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
           </nav>
         </aside>
 
-        <section className="flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+        <section className="min-w-0 flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
           <div className="rounded-[30px] border border-[var(--pf-border)] bg-[rgba(245,243,239,0.92)] p-5 shadow-[0_24px_60px_rgba(58,44,25,0.12)] backdrop-blur">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex flex-col gap-6">
               <div className="max-w-3xl">
                 <p className="text-[11px] font-black uppercase tracking-[0.36em] text-[var(--pf-secondary)]">Administracion</p>
                 <h1 className="mt-3 text-4xl font-black tracking-tight text-[var(--pf-text)] sm:text-5xl">
@@ -1163,7 +1334,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                 </h1>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:w-[860px] xl:grid-cols-3 2xl:w-[960px] 2xl:grid-cols-5">
+              <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
                 <div className="flex min-h-[94px] min-w-[132px] flex-col justify-between overflow-hidden rounded-[22px] border border-[var(--pf-border-soft)] bg-white p-4 shadow-[0_10px_25px_rgba(58,44,25,0.06)]">
                   <p className="truncate text-[9px] font-black uppercase leading-none tracking-[0.22em] text-[var(--pf-muted)]">Productos</p>
                   <p className="text-2xl font-black leading-none text-[var(--pf-text)]">{overview.counts.products}</p>
@@ -1187,19 +1358,21 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 xl:flex-row xl:items-center">
-              <label className="flex h-14 flex-1 items-center rounded-full border border-[var(--pf-border-soft)] bg-white px-5 text-[var(--pf-muted)] shadow-[0_8px_22px_rgba(58,44,25,0.06)]">
-                <span className="text-sm">Buscar</span>
-                              <input
+            <div className="mt-6 flex flex-col gap-3 2xl:flex-row 2xl:items-center">
+              <label className="flex h-14 flex-1 items-center gap-4 rounded-full border border-[var(--pf-border-soft)] bg-white px-3 text-[var(--pf-muted)] shadow-[0_8px_22px_rgba(58,44,25,0.06)]">
+                <span className="inline-flex h-9 shrink-0 items-center rounded-full bg-[var(--pf-text)] px-5 text-sm font-black uppercase tracking-[0.08em] text-white">
+                  Buscar
+                </span>
+                <input
                   type="text"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  className="ml-3 flex-1 bg-transparent text-sm text-[var(--pf-text)] outline-none placeholder:text-[var(--pf-muted)]"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-[var(--pf-text)] outline-none placeholder:text-[var(--pf-muted)]"
                   placeholder="Buscar por SKU, nombre, email o estado"
                 />
               </label>
 
-              <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3">
                 {selectedRowIds.length > 0 && selectedTable.key !== "product_lot_reservations" ? (
                   <button
                     type="button"
@@ -1230,7 +1403,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
             </div>
 
             <div className="mt-6">
-              <section className="rounded-[28px] border border-[var(--pf-border-soft)] bg-[rgba(255,250,242,0.94)] p-4 shadow-[0_16px_40px_rgba(58,44,25,0.08)]">
+              <section className="min-w-0 rounded-[28px] border border-[var(--pf-border-soft)] bg-[rgba(255,250,242,0.94)] p-4 shadow-[0_16px_40px_rgba(58,44,25,0.08)]">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.34em] text-[var(--pf-secondary)]">
@@ -1260,6 +1433,11 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                     <table className="min-w-[960px] w-full border-collapse">
                       <thead className="bg-[rgba(245,243,239,0.6)]">
                         <tr>
+                          {selectedTable.key === "products" ? (
+                            <th className="w-14 border-b border-[var(--pf-border-soft)] px-3 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[var(--pf-muted)]">
+                              Mover
+                            </th>
+                          ) : null}
                           <th className="border-b border-[var(--pf-border-soft)] px-4 py-4 text-left text-[11px] font-black uppercase tracking-[0.24em] text-[var(--pf-muted)]">
                             <input
                               ref={selectAllRef}
@@ -1300,17 +1478,56 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                         </tr>
                       </thead>
                       <tbody>
-                        {visibleRows.map((row) => {
+                        {paginatedRows.map((row) => {
                           const rowId = getRowId(selectedTable, row);
                           const isSelected = rowId === selectedRowId || selectedRowIdSet.has(rowId);
+                          const productId = selectedTable.key === "products" ? Number(row.id) : 0;
+                          const canDrag = selectedTable.key === "products" && !query.trim() && !reorderSaving;
 
                           return (
                             <tr
                               key={rowId}
+                              onDragOver={(event) => {
+                                if (!canDrag) return;
+                                event.preventDefault();
+                                setDragOverProductId(productId);
+                              }}
+                              onDrop={(event) => {
+                                if (!canDrag) return;
+                                event.preventDefault();
+                                void handleProductDrop(productId);
+                              }}
                               className={`border-b border-[var(--pf-border-soft)] transition ${
-                                isSelected ? "bg-[#fff8ec]" : "hover:bg-[#fdf8ef]"
+                                dragOverProductId === productId
+                                  ? "bg-[rgba(200,154,21,0.14)]"
+                                  : isSelected
+                                    ? "bg-[#fff8ec]"
+                                    : "hover:bg-[#fdf8ef]"
                               }`}
                             >
+                              {selectedTable.key === "products" ? (
+                                <td className="px-3 py-4 text-center align-top">
+                                  <button
+                                    type="button"
+                                    draggable={canDrag}
+                                    disabled={!canDrag}
+                                    onDragStart={(event) => {
+                                      event.dataTransfer.effectAllowed = "move";
+                                      event.dataTransfer.setData("text/plain", rowId);
+                                      setDraggedProductId(productId);
+                                    }}
+                                    onDragEnd={() => {
+                                      setDraggedProductId(null);
+                                      setDragOverProductId(null);
+                                    }}
+                                    className="inline-flex h-9 w-9 cursor-grab items-center justify-center rounded-lg border border-[var(--pf-border-soft)] bg-white text-[var(--pf-muted)] transition hover:border-[var(--pf-primary)] hover:text-[var(--pf-primary-darker)] active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+                                    aria-label={`Mover ${String(row[selectedTable.rowLabelField] ?? rowId)}`}
+                                    title={query.trim() ? "Quitá la búsqueda para ordenar" : "Arrastrar para cambiar la posición"}
+                                  >
+                                    <GripVertical className="h-4 w-4" aria-hidden="true" />
+                                  </button>
+                                </td>
+                              ) : null}
                               <td className="px-4 py-4 align-top">
                                 <input
                                   type="checkbox"
@@ -1407,6 +1624,22 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                       </tbody>
                     </table>
                   </div>
+                  {totalPages > 1 ? (
+                    <div className="flex flex-col gap-3 border-t border-[var(--pf-border-soft)] bg-[rgba(245,243,239,0.45)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm font-semibold text-[var(--pf-muted)]">
+                        {(currentPage - 1) * ADMIN_PAGE_SIZE + 1}-{Math.min(currentPage * ADMIN_PAGE_SIZE, visibleRows.length)} de {visibleRows.length}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--pf-border-soft)] bg-white text-[var(--pf-primary-darker)] transition hover:border-[var(--pf-primary)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página anterior" title="Página anterior">
+                          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        <span className="min-w-28 text-center text-sm font-bold text-[var(--pf-text)]">Página {currentPage} de {totalPages}</span>
+                        <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--pf-border-soft)] bg-white text-[var(--pf-primary-darker)] transition hover:border-[var(--pf-primary)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Página siguiente" title="Página siguiente">
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </section>
             </div>
@@ -1513,6 +1746,16 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                 {selectedTable.fields.map((field) => {
                   if (field.hidden || field.readonly) {
                     return null;
+                  }
+
+                  if (selectedTable.key === "products") {
+                    const offerMode = String(editor.draft.offerMode ?? "off");
+                    if (field.key === "offerWeekdays" && offerMode !== "weekly") {
+                      return null;
+                    }
+                    if (["offerStartDate", "offerEndDate"].includes(field.key) && offerMode !== "period") {
+                      return null;
+                    }
                   }
 
                   const value = editor.draft[field.key];
@@ -1966,13 +2209,29 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                                     </span>
                                     <input
                                       type="file"
-                                      accept="image/*,video/*"
+                                      accept={PRODUCT_MEDIA_ACCEPT}
                                       className="sr-only"
                                       disabled={Boolean(uploadState?.loading)}
                                       onChange={async (event) => {
                                         const file = event.target.files?.[0];
 
                                         if (!file) {
+                                          return;
+                                        }
+
+                                        const validationError = validateProductMediaFile(file);
+
+                                        if (validationError) {
+                                          setFileNames((current) => ({ ...current, [slotKey]: file.name }));
+                                          setUploadStates((current) => ({
+                                            ...current,
+                                            [slotKey]: {
+                                              loading: false,
+                                              fileName: file.name,
+                                              error: validationError,
+                                            },
+                                          }));
+                                          event.target.value = "";
                                           return;
                                         }
 
@@ -2085,7 +2344,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                           </div>
 
                           <div className="rounded-[18px] border border-dashed border-[rgba(200,154,21,0.18)] bg-[rgba(200,154,21,0.06)] px-4 py-3 text-sm text-[var(--pf-primary-darker)]">
-                            Podés cargar hasta 5 fotos. La primera se usa como imagen principal en el catálogo.
+                            Podés cargar hasta 5 imágenes o videos. Videos: MP4, WEBM, MOV, M4V u OGG, hasta 20 MB. El primer archivo se usa como portada del catálogo.
                           </div>
                         </div>
                       </div>
@@ -2117,7 +2376,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                   }
 
                   if (field.kind === "product_measures") {
-                    const measures = parseProductMeasures(value);
+                    const measures = parseProductMeasures(value, editor.draft);
                     const updateMeasures = (next: ProductMeasureDraft[]) =>
                       setEditor((current) =>
                         current ? { ...current, draft: { ...current.draft, [field.key]: serializeProductMeasures(next) } } : current,
@@ -2133,6 +2392,9 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                           {measures.map((measure, index) => {
                             const update = (changes: Partial<ProductMeasureDraft>) =>
                               updateMeasures(measures.map((item, itemIndex) => (itemIndex === index ? { ...item, ...changes } : item)));
+                            const openingSlotKey = `${field.key}:${measure.id}:opening-system`;
+                            const openingUploadState = uploadStates[openingSlotKey];
+                            const openingFileName = fileNames[openingSlotKey] ?? "";
                             return (
                               <div key={measure.id} className="rounded-[18px] border border-[var(--pf-border-soft)] bg-[#fbf8f1] p-3">
                                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,0.7fr))_auto]">
@@ -2141,14 +2403,120 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                                   ))}
                                   <button type="button" onClick={() => updateMeasures(measures.filter((_, itemIndex) => itemIndex !== index))} className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">Quitar</button>
                                 </div>
-                                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                                  <input value={measure.unit} placeholder="Unidad" onChange={(event) => update({ unit: event.target.value })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" />
-                                  <input value={String(measure.publicPrice)} type="number" min="1" placeholder="Precio" onChange={(event) => update({ publicPrice: event.target.value === "" ? "" : Number(event.target.value) })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" />
-                                </div>
-                              </div>
+                                 <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                                   <input value={measure.unit} placeholder="Unidad" onChange={(event) => update({ unit: event.target.value })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" />
+                                   <input value={String(measure.publicPrice)} type="number" min="1" placeholder="Precio de lista" onChange={(event) => update({ publicPrice: event.target.value === "" ? "" : Number(event.target.value) })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" />
+                                   <input value={String(measure.cashPrice)} type="number" min="1" placeholder="Precio en efectivo" onChange={(event) => update({ cashPrice: event.target.value === "" ? "" : Number(event.target.value) })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" />
+                                 </div>
+                                 <div className="mt-3 rounded-2xl border border-[rgba(217,43,34,0.18)] bg-[rgba(255,247,246,0.7)] p-3">
+                                   <div className="grid gap-2 sm:grid-cols-2">
+                                     <input value={String(measure.offerPrice)} type="number" min="1" placeholder="Precio de oferta" onChange={(event) => update({ offerPrice: event.target.value === "" ? "" : Number(event.target.value) })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" />
+                                     <select value={measure.offerMode} onChange={(event) => update({ offerMode: event.target.value as ProductMeasureDraft["offerMode"] })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm"><option value="off">Oferta desactivada</option><option value="manual">Manual (activa ahora)</option><option value="weekly">Días de la semana</option><option value="period">Período de fechas</option></select>
+                                   </div>
+                                   {measure.offerMode === "weekly" ? <div className="mt-3 flex flex-wrap gap-2">{[[1, "Lun"], [2, "Mar"], [3, "Mié"], [4, "Jue"], [5, "Vie"], [6, "Sáb"], [0, "Dom"]].map(([day, label]) => { const weekday = Number(day); const selected = measure.offerWeekdays.includes(weekday); return <label key={weekday} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pf-border-soft)] bg-white px-2.5 py-1.5 text-xs font-semibold"><input type="checkbox" checked={selected} onChange={() => update({ offerWeekdays: selected ? measure.offerWeekdays.filter((item) => item !== weekday) : [...measure.offerWeekdays, weekday] })} className="h-3.5 w-3.5 accent-[var(--pf-primary)]" />{label}</label>; })}</div> : null}
+                                   {measure.offerMode === "period" ? <div className="mt-3 grid gap-2 sm:grid-cols-2"><input type="date" value={measure.offerStartDate} onChange={(event) => update({ offerStartDate: event.target.value })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" /><input type="date" value={measure.offerEndDate} onChange={(event) => update({ offerEndDate: event.target.value })} className="rounded-xl border border-[var(--pf-border-soft)] bg-white px-3 py-2 text-sm" /></div> : null}
+                                 </div>
+                                 <div className="mt-3 rounded-2xl border border-[var(--pf-border-soft)] bg-white p-3">
+                                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                     <div>
+                                       <p className="text-sm font-bold text-[var(--pf-text)]">Sistema de apertura</p>
+                                       <p className="mt-1 text-xs text-[var(--pf-muted)]">Imagen específica para esta medida.</p>
+                                     </div>
+                                     <label className="flex items-center gap-2 text-sm font-semibold text-[var(--pf-text)]">
+                                       <input
+                                         type="checkbox"
+                                         checked={measure.showOpeningSystem}
+                                         disabled={!measure.openingSystemImage}
+                                         onChange={(event) => update({ showOpeningSystem: event.target.checked })}
+                                         className="h-4 w-4 accent-[var(--pf-primary)]"
+                                       />
+                                       Mostrar sección
+                                     </label>
+                                   </div>
+
+                                   <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                                     <label className="flex min-h-16 cursor-pointer flex-col justify-center rounded-xl border border-dashed border-[rgba(200,154,21,0.24)] bg-[rgba(200,154,21,0.05)] px-4 py-3">
+                                       <span className="text-sm font-bold text-[var(--pf-primary-darker)]">
+                                         {measure.openingSystemImage ? "Cambiar imagen" : "Cargar imagen"}
+                                       </span>
+                                       <span className="mt-1 truncate text-xs text-[var(--pf-muted)]">
+                                         {openingFileName || (measure.openingSystemImage ? "Imagen cargada" : "JPG, PNG, WEBP, GIF o AVIF")}
+                                       </span>
+                                       <input
+                                         type="file"
+                                         accept={PRODUCT_IMAGE_ACCEPT}
+                                         className="sr-only"
+                                         disabled={Boolean(openingUploadState?.loading)}
+                                         onChange={async (event) => {
+                                           const file = event.target.files?.[0];
+                                           if (!file) return;
+
+                                           const validationError = validateProductImageFile(file);
+                                           setFileNames((current) => ({ ...current, [openingSlotKey]: file.name }));
+
+                                           if (validationError) {
+                                             setUploadStates((current) => ({
+                                               ...current,
+                                               [openingSlotKey]: { loading: false, fileName: file.name, error: validationError },
+                                             }));
+                                             event.target.value = "";
+                                             return;
+                                           }
+
+                                           setUploadStates((current) => ({
+                                             ...current,
+                                             [openingSlotKey]: { loading: true, fileName: file.name },
+                                           }));
+
+                                           try {
+                                             const fallbackName = [
+                                               String(editor?.draft.name ?? "").trim(),
+                                               String(editor?.draft.sku ?? "").trim(),
+                                               measure.label,
+                                               "sistema-apertura",
+                                             ].filter(Boolean).join("-");
+                                             const publicUrl = await uploadAdminImage(file, `${selectedTable.key}-opening-system`, fallbackName);
+                                             update({ openingSystemImage: publicUrl, showOpeningSystem: true });
+                                             setUploadStates((current) => ({
+                                               ...current,
+                                               [openingSlotKey]: { loading: false, fileName: file.name },
+                                             }));
+                                           } catch (error) {
+                                             setUploadStates((current) => ({
+                                               ...current,
+                                               [openingSlotKey]: {
+                                                 loading: false,
+                                                 fileName: file.name,
+                                                 error: error instanceof Error ? error.message : "No se pudo subir la imagen.",
+                                               },
+                                             }));
+                                           } finally {
+                                             event.target.value = "";
+                                           }
+                                         }}
+                                       />
+                                     </label>
+                                     {measure.openingSystemImage ? (
+                                       <button
+                                         type="button"
+                                         onClick={() => update({ openingSystemImage: "", showOpeningSystem: false })}
+                                         className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700"
+                                       >
+                                         Quitar imagen
+                                       </button>
+                                     ) : null}
+                                   </div>
+
+                                   {openingUploadState?.loading ? <p className="mt-2 text-xs text-[var(--pf-primary-darker)]">Subiendo imagen...</p> : null}
+                                   {openingUploadState?.error ? <p className="mt-2 text-xs text-red-700">{openingUploadState.error}</p> : null}
+                                   {measure.openingSystemImage ? (
+                                     <img src={measure.openingSystemImage} alt="Vista previa del sistema de apertura" className="mt-3 max-h-48 w-full rounded-xl border border-[var(--pf-border-soft)] object-contain p-2" />
+                                   ) : null}
+                                 </div>
+                               </div>
                             );
                           })}
-                          <button type="button" onClick={() => updateMeasures([...measures, { id: `measure-${Date.now()}`, label: "", width: "", depth: "", height: "", unit: "cm", publicPrice: "" }])} className="rounded-full border border-[rgba(200,154,21,0.28)] bg-[rgba(200,154,21,0.08)] px-4 py-2 text-sm font-semibold text-[var(--pf-primary-darker)]">+ Agregar medida</button>
+                          <button type="button" onClick={() => updateMeasures([...measures, { id: `measure-${Date.now()}`, label: "", width: "", depth: "", height: "", unit: "cm", publicPrice: "", cashPrice: "", offerPrice: "", offerMode: "off", offerWeekdays: [], offerStartDate: "", offerEndDate: "", openingSystemImage: "", showOpeningSystem: false }])} className="rounded-full border border-[rgba(200,154,21,0.28)] bg-[rgba(200,154,21,0.08)] px-4 py-2 text-sm font-semibold text-[var(--pf-primary-darker)]">+ Agregar medida</button>
                         </div>
                       </div>
                     );
@@ -2606,7 +2974,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                         {field.helper ? <span className="text-xs text-[var(--pf-muted)]">{field.helper}</span> : null}
                       </div>
                       <input
-                        type={field.kind === "number" ? "number" : "text"}
+                        type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"}
                         value={value == null ? "" : String(value)}
                         onChange={(event) =>
                           setEditor((current) =>

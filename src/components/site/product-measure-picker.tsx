@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CartAddButton } from "@/components/cart/cart-add-button";
 import type { ProductItem, ProductMeasure } from "@/domain/site-content";
 import { formatCurrency } from "@/lib/catalog";
+import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
 import { PRODUCT_MEASURE_CHANGE_EVENT } from "@/components/site/product-measure-events";
 
 function getDimensions(measure: ProductMeasure) {
@@ -22,7 +23,17 @@ export function ProductMeasurePicker({ product }: { product: ProductItem }) {
     setSelectedMeasureId(measure.id);
     window.dispatchEvent(
       new CustomEvent(PRODUCT_MEASURE_CHANGE_EVENT, {
-        detail: { productId: product.id, price: measure.publicPrice },
+        detail: {
+          productId: product.id,
+          measureId: measure.id,
+          measureLabel: measure.label,
+          price: resolveProductUnitPrice(product, measure),
+          listPrice: measure.publicPrice,
+          cashPrice: resolveProductCashPrice(product, measure),
+          offerActive: isProductOfferActive(product, measure),
+          openingSystemImage: measure.openingSystemImage,
+          showOpeningSystem: measure.showOpeningSystem !== false,
+        },
       }),
     );
   };
@@ -53,7 +64,7 @@ export function ProductMeasurePicker({ product }: { product: ProductItem }) {
             >
               <span className="block text-base font-bold text-[var(--pf-text)]">{measure.label}</span>
               <span className="mt-2 block text-sm text-[var(--pf-muted)]">{getDimensions(measure)}</span>
-              <span className="mt-3 block text-lg font-black text-[var(--pf-primary-darker)]">{formatCurrency(measure.publicPrice)}</span>
+              <span className="mt-3 block text-lg font-black text-[var(--pf-primary-darker)]">{formatCurrency(resolveProductUnitPrice(product, measure))}</span>
             </button>
           );
         })}

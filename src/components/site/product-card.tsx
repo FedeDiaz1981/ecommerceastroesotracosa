@@ -8,7 +8,8 @@ import type { ProductItem } from "@/domain/site-content";
 import { formatCurrency } from "@/lib/catalog";
 import { isNewArrival, isVideoAsset, publicAsset } from "@/lib/catalog";
 import { appendReturnTo } from "@/lib/navigation";
-import { resolveProductUnitPrice } from "@/lib/pricing";
+import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+import { ProductOfferPrice } from "@/components/site/product-offer-price";
 
 function getInventoryLabel(product: ProductItem) {
   if (product.stock == null) {
@@ -23,8 +24,9 @@ function getInventoryLabel(product: ProductItem) {
 }
 
 function getSpecialPrice(product: ProductItem) {
-  if (product.memberPrice > 0 && product.memberPrice < product.publicPrice) {
-    return product.memberPrice;
+  const cashPrice = resolveProductCashPrice(product);
+  if (cashPrice > 0 && cashPrice < resolveProductUnitPrice(product)) {
+    return cashPrice;
   }
 
   return null;
@@ -60,6 +62,7 @@ export function ProductCard({
   const variantCount = getVariantCount(product);
   const specialPrice = getSpecialPrice(product);
   const unitPrice = resolveProductUnitPrice(product);
+  const offerActive = isProductOfferActive(product);
   const detailHref = href ? appendReturnTo(href, returnTo) : "";
   const hasModalAction = Boolean(onSelect);
   const isClickable = hasModalAction || Boolean(detailHref);
@@ -144,7 +147,15 @@ export function ProductCard({
       <div className="flex min-h-[9.25rem] flex-col justify-between border-t border-[rgba(212,168,26,0.16)] px-4 py-3">
         <div className="text-center">
           <h3 className="line-clamp-2 text-[0.98rem] font-medium leading-6 text-[var(--pf-text)]">{product.name}</h3>
-          <p className="mt-2 text-[1.02rem] font-black tracking-[-0.03em] text-[var(--pf-text)]">{formatCurrency(unitPrice)}</p>
+          <ProductOfferPrice
+            productId={product.id}
+            initialListPrice={product.publicPrice}
+            offerPrice={unitPrice}
+            offerActive={offerActive}
+            className="mt-2 text-[1.02rem] font-black tracking-[-0.03em] text-[var(--pf-text)]"
+            listPriceClassName="text-[0.78rem]"
+            offerPriceClassName="text-[1.02rem] text-[var(--pf-accent)]"
+          />
           {specialPrice ? (
             <p className="mt-1 text-[11px] font-semibold text-[var(--pf-primary-darker)]">
               Transferencia / efectivo {formatCurrency(specialPrice)}

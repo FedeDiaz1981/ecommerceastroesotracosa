@@ -13,8 +13,8 @@ function normalizeDirectUrl(value: string | undefined) {
 }
 
 export function buildWhatsAppHref(message = DEFAULT_WHATSAPP_MESSAGE) {
-  const directUrl = normalizeDirectUrl(process.env.NEXT_PUBLIC_WHATSAPP_URL);
-  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "");
+  const directUrl = normalizeDirectUrl(import.meta.env.PUBLIC_WHATSAPP_URL);
+  const phoneNumber = import.meta.env.PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "");
 
   if (directUrl) {
     return directUrl;

@@ -10,7 +10,8 @@ import { ProductLotOffer } from "@/components/site/product-lot-offer";
 import type { ProductItem } from "@/domain/site-content";
 import { formatCurrency, isVideoAsset, publicAsset } from "@/lib/catalog";
 import { appendReturnTo } from "@/lib/navigation";
-import { resolveProductUnitPrice } from "@/lib/pricing";
+import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+import { ProductOfferPrice } from "@/components/site/product-offer-price";
 import { buildProductWhatsAppHref } from "@/lib/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -168,7 +169,10 @@ export function ProductDetailModal({
   const safeQuantity = Math.min(Math.max(quantity, 1), maxQuantity);
   const selectedMeasure = product?.measures?.find((measure) => measure.id === selectedMeasureId) ?? product?.measures?.[0] ?? null;
   const unitPrice = product ? resolveProductUnitPrice(product, selectedMeasure) : 0;
+  const offerActive = product ? isProductOfferActive(product) : false;
   const totalPrice = product ? unitPrice * safeQuantity : 0;
+  const cashUnitPrice = product ? resolveProductCashPrice(product, selectedMeasure) : 0;
+  const cashTotalPrice = cashUnitPrice * safeQuantity;
   const fullDescription = (product?.description || product?.detail || "").trim();
   const truncatedDescriptionLimit = 180;
   const shouldTruncateDescription = fullDescription.length > truncatedDescriptionLimit;
@@ -293,8 +297,25 @@ export function ProductDetailModal({
                     variant="outline"
                     className="rounded-full border-[rgba(200,154,21,0.18)] bg-[rgba(255,255,255,0.92)] px-3 py-1 text-[11px] font-semibold text-[var(--pf-text)] shadow-[0_8px_18px_rgba(29,24,20,0.05)]"
                   >
-                    {formatCurrency(unitPrice)}
+                    <ProductOfferPrice
+                      key={selectedMeasure?.id ?? product.id}
+                      productId={product.id}
+                      initialListPrice={selectedMeasure?.publicPrice ?? product.publicPrice}
+                      offerPrice={unitPrice}
+                      offerActive={offerActive}
+                      className="gap-x-1"
+                      listPriceClassName="text-[10px]"
+                      offerPriceClassName="text-[var(--pf-accent)]"
+                    />
                   </Badge>
+                  {cashUnitPrice > 0 ? (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-[rgba(58,122,86,0.22)] bg-[rgba(229,244,235,0.92)] px-3 py-1 text-[11px] font-semibold text-[#245f40] shadow-[0_8px_18px_rgba(29,24,20,0.05)]"
+                    >
+                      Efectivo: {formatCurrency(cashUnitPrice)}
+                    </Badge>
+                  ) : null}
                   <Badge
                     variant="outline"
                     className="rounded-full border-[rgba(200,154,21,0.18)] bg-[rgba(255,255,255,0.92)] px-3 py-1 text-[11px] font-semibold text-[var(--pf-text)] shadow-[0_8px_18px_rgba(29,24,20,0.05)]"
@@ -341,11 +362,16 @@ export function ProductDetailModal({
                 ) : null}
 
                 <div className="rounded-[1.5rem] border border-[rgba(200,154,21,0.14)] bg-[linear-gradient(180deg,rgba(255,251,244,0.96),rgba(244,236,223,0.92))] p-5 shadow-[0_12px_28px_rgba(29,24,20,0.05)]">
-                  <p className="text-[10px] font-black uppercase tracking-[0.36em] text-[var(--pf-muted)]">Total</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.36em] text-[var(--pf-muted)]">Total financiado</p>
                   <p className="mt-2 text-[2.3rem] font-extrabold tracking-[-0.06em] text-[var(--pf-text)]">{formatCurrency(totalPrice)}</p>
                   <p className="mt-1 text-sm text-[var(--pf-muted)]">
                     {safeQuantity} x {formatCurrency(unitPrice)}
                   </p>
+                  {cashUnitPrice > 0 ? (
+                    <p className="mt-3 border-t border-[rgba(29,24,20,0.08)] pt-3 text-sm font-bold text-[#245f40]">
+                      En efectivo: {formatCurrency(cashTotalPrice)}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="order-3 flex flex-wrap gap-3 pb-1">
@@ -453,7 +479,7 @@ export function ProductDetailModal({
                           <button key={measure.id} type="button" onClick={() => setSelectedMeasureId(measure.id)} className={`rounded-2xl border px-4 py-3 text-left transition ${selected ? "border-[rgba(200,154,21,0.42)] bg-[rgba(246,226,167,0.42)]" : "border-[rgba(29,24,20,0.1)] bg-white hover:border-[rgba(200,154,21,0.28)]"}`}>
                             <span className="block text-sm font-bold text-[var(--pf-text)]">{measure.label}</span>
                             <span className="mt-1 block text-xs text-[var(--pf-muted)]">{dimensions}</span>
-                            <span className="mt-2 block text-sm font-semibold text-[var(--pf-primary-darker)]">{formatCurrency(measure.publicPrice)}</span>
+                            <span className="mt-2 block text-sm font-semibold text-[var(--pf-primary-darker)]">{formatCurrency(resolveProductUnitPrice(product, measure))}</span>
                           </button>
                         );
                       })}

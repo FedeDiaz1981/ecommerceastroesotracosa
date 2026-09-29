@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PackItem, ProductItem, ProductLotItem, ProductMeasure } from "@/domain/site-content";
+import { isProductOfferActive } from "@/lib/pricing";
 
 export type CartLine = {
   kind: "product" | "pack" | "lot";
@@ -13,6 +14,11 @@ export type CartLine = {
   image?: string;
   publicPrice: number;
   memberPrice: number;
+  offerPrice?: number;
+  offerMode?: ProductItem["offerMode"];
+  offerWeekdays?: number[];
+  offerStartDate?: string;
+  offerEndDate?: string;
   measureId?: string;
   measureLabel?: string;
   quantity: number;
@@ -75,6 +81,11 @@ function safeParseCart(value: string | null): CartLine[] {
         image: item.image ? String(item.image) : undefined,
         publicPrice: Number(item.publicPrice),
         memberPrice: Number(item.memberPrice ?? item.publicPrice),
+        offerPrice: item.offerPrice == null ? undefined : Number(item.offerPrice),
+        offerMode: item.offerMode,
+        offerWeekdays: Array.isArray(item.offerWeekdays) ? item.offerWeekdays.map(Number) : undefined,
+        offerStartDate: item.offerStartDate ? String(item.offerStartDate) : undefined,
+        offerEndDate: item.offerEndDate ? String(item.offerEndDate) : undefined,
         measureId: item.measureId ? String(item.measureId) : undefined,
         measureLabel: item.measureLabel ? String(item.measureLabel) : undefined,
         quantity: clampQuantity(
@@ -94,6 +105,9 @@ function safeParseCart(value: string | null): CartLine[] {
 }
 
 export function resolveCartLineUnitPrice(item: CartLine) {
+  if (item.kind === "product" && isProductOfferActive(item)) {
+    return Number(item.offerPrice);
+  }
   return item.publicPrice;
 }
 
@@ -154,6 +168,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
               image: product.image,
               publicPrice: measure?.publicPrice ?? product.publicPrice,
               memberPrice: product.memberPrice,
+              offerPrice: measure?.offerPrice ?? product.offerPrice,
+              offerMode: measure?.offerMode ?? product.offerMode,
+              offerWeekdays: measure?.offerWeekdays ?? product.offerWeekdays,
+              offerStartDate: measure?.offerStartDate ?? product.offerStartDate,
+              offerEndDate: measure?.offerEndDate ?? product.offerEndDate,
               measureId: measure?.id,
               measureLabel: measure?.label,
               quantity: nextQuantity,

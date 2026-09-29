@@ -1,8 +1,18 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { StoreShell } from "@/page-apps/StoreShell";
+
+const adminBackendUrl = String(
+  import.meta.env.PUBLIC_ADMIN_APP_BASE_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:3006" : ""),
+).replace(/\/$/, "");
 ---
 
 <BaseLayout title="Administracion | Es otra cosa">
-  <StoreShell page="admin" client:load />
+  {adminBackendUrl ? (
+    <script define:vars={{ adminBackendUrl }}>
+      window.location.replace(`${adminBackendUrl}/admin`);
+    </script>
+  ) : (
+    <StoreShell page="admin" client:load />
+  )}
 </BaseLayout>
