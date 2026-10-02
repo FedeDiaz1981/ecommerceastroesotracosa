@@ -14,12 +14,12 @@ import { ProductOpeningSystem } from "@/components/site/product-opening-system";
 import { getSiteContent } from "@/infrastructure/site-content.repository";
 import { formatCurrency } from "@/lib/catalog";
 import { normalizeReturnTo } from "@/lib/navigation";
-import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+import { getDefaultProductMeasure, isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
 
 const MERCADO_PAGO_API_BASE_URL = String(
   import.meta.env.PUBLIC_MERCADO_PAGO_API_BASE_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:3000" : ""),
 ).replace(/\/$/, "");
-const MERCADO_PAGO_PREFERENCE_ENDPOINT = `${MERCADO_PAGO_API_BASE_URL}/api/mercado-pago/preference`;
+const MERCADO_PAGO_PAYMENT_METHODS_ENDPOINT = `${MERCADO_PAGO_API_BASE_URL}/api/mercado-pago/payment-methods.php`;
 
 function isVisibleProduct(
   product: {
@@ -94,10 +94,11 @@ export default function ProductPageApp({
 
   const imageList = product.images?.length ? product.images : product.image ? [product.image] : [];
   const heroImages = imageList.length > 0 ? imageList : [product.image ?? ""];
-  const heroPrice = resolveProductUnitPrice(product, product.measures?.[0] ?? null);
-  const initialListPrice = product.measures?.[0]?.publicPrice ?? product.publicPrice;
-  const initialCashPrice = resolveProductCashPrice(product, product.measures?.[0] ?? null);
-  const offerActive = isProductOfferActive(product);
+  const initialMeasure = getDefaultProductMeasure(product);
+  const heroPrice = resolveProductUnitPrice(product, initialMeasure);
+  const initialListPrice = initialMeasure?.publicPrice ?? product.publicPrice;
+  const initialCashPrice = resolveProductCashPrice(product, initialMeasure);
+  const offerActive = isProductOfferActive(product, initialMeasure);
   const fabricCount = product.fabricVariants?.length ?? product.fabricIds?.length ?? 0;
 
   return (
@@ -143,7 +144,7 @@ export default function ProductPageApp({
             </CartAddButton>
             <ProductMercadoPagoFinancing
               product={product}
-              preferenceEndpoint={MERCADO_PAGO_PREFERENCE_ENDPOINT}
+              paymentMethodsEndpoint={MERCADO_PAGO_PAYMENT_METHODS_ENDPOINT}
             />
           </div>
         </section>
@@ -176,7 +177,7 @@ export default function ProductPageApp({
           </div>
         </section>
 
-        <ProductOpeningSystem productId={product.id} initialMeasure={product.measures?.[0] ?? null} />
+        <ProductOpeningSystem productId={product.id} initialMeasure={initialMeasure} />
 
         <section className="border-y border-[rgba(0,0,0,0.08)] py-12">
           <SectionTitle

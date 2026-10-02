@@ -14,7 +14,7 @@ const CART_TOGGLE_ID = "pf-cart-toggle";
 const MERCADO_PAGO_API_BASE_URL = String(
   import.meta.env.PUBLIC_MERCADO_PAGO_API_BASE_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:3000" : ""),
 ).replace(/\/$/, "");
-const MERCADO_PAGO_PREFERENCE_ENDPOINT = `${MERCADO_PAGO_API_BASE_URL}/api/mercado-pago/preference`;
+const MERCADO_PAGO_PREFERENCE_ENDPOINT = `${MERCADO_PAGO_API_BASE_URL}/api/mercado-pago/preference.php`;
 
 type PaymentOption = {
   id: string;

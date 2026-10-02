@@ -7,6 +7,21 @@ const content = siteContent as unknown as SiteContentDocument;
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
+async function getSupabaseClient() {
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  const { createClient } = await import("@supabase/supabase-js");
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { autoRefreshToken: true, detectSessionInUrl: false, persistSession: true },
+  });
+}
+
+export async function getStaticAccessToken() {
+  const supabase = await getSupabaseClient();
+  if (!supabase) return "";
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? "";
+}
+
 function normalizeRole(role: string | null | undefined): AuthRole {
   const normalized = String(role ?? "").trim().toLowerCase();
   return normalized === "admin" || normalized === "administrador" ? "Administrador" : "Cliente";
@@ -17,9 +32,22 @@ function toViewerSession(authUserId: string, email: string): ViewerSession | nul
     return user.authUserId === authUserId || user.email.toLowerCase() === email.toLowerCase();
   });
 
-  if (!row || !row.active) {
-    return null;
+  if (!row) {
+    // PHP validates the administrator role against Supabase before mutating data.
+    return {
+      authenticated: true,
+      userId: 0,
+      authUserId,
+      email,
+      name: email.split("@")[0] || "Usuario",
+      role: "Cliente",
+      canSeePrices: false,
+      active: true,
+      isAdmin: false,
+    };
   }
+
+  if (!row.active) return null;
 
   const role = normalizeRole(row.role);
 

@@ -10,7 +10,7 @@ import { ProductLotOffer } from "@/components/site/product-lot-offer";
 import type { ProductItem } from "@/domain/site-content";
 import { formatCurrency, isVideoAsset, publicAsset } from "@/lib/catalog";
 import { appendReturnTo } from "@/lib/navigation";
-import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+import { getDefaultProductMeasure, isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
 import { ProductOfferPrice } from "@/components/site/product-offer-price";
 import { buildProductWhatsAppHref } from "@/lib/whatsapp";
 import { Badge } from "@/components/ui/badge";
@@ -85,8 +85,8 @@ export function ProductDetailModal({
     setIsAdding(false);
     setShowFullDetails(false);
     setSelectedFabricId(product.fabricVariants?.[0]?.fabricId ?? null);
-    setSelectedMeasureId(product.measures?.[0]?.id ?? null);
-  }, [product?.id]);
+    setSelectedMeasureId(getDefaultProductMeasure(product)?.id ?? null);
+  }, [product]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -167,9 +167,9 @@ export function ProductDetailModal({
   }, [product]);
 
   const safeQuantity = Math.min(Math.max(quantity, 1), maxQuantity);
-  const selectedMeasure = product?.measures?.find((measure) => measure.id === selectedMeasureId) ?? product?.measures?.[0] ?? null;
+  const selectedMeasure = product?.measures?.find((measure) => measure.id === selectedMeasureId) ?? (product ? getDefaultProductMeasure(product) : null);
   const unitPrice = product ? resolveProductUnitPrice(product, selectedMeasure) : 0;
-  const offerActive = product ? isProductOfferActive(product) : false;
+  const offerActive = product ? isProductOfferActive(product, selectedMeasure) : false;
   const totalPrice = product ? unitPrice * safeQuantity : 0;
   const cashUnitPrice = product ? resolveProductCashPrice(product, selectedMeasure) : 0;
   const cashTotalPrice = cashUnitPrice * safeQuantity;

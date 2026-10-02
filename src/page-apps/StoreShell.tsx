@@ -1,4 +1,5 @@
-import { getActivePaymentMethods, getActiveSiteBanners, getDynamicHeaderMenus } from "@/application/catalog";
+import { getActivePaymentMethods, getActiveSiteBanners, getDynamicHeaderMenus, replaceCatalogProducts } from "@/application/catalog";
+import type { ProductItem } from "@/domain/site-content";
 import { useEffect, useState } from "react";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { ViewerProvider } from "@/components/auth/viewer-provider";
@@ -6,6 +7,7 @@ import { CartProvider } from "@/components/cart/cart-context";
 import { CartPanel } from "@/components/cart/cart-panel";
 import { FloatingCartButton } from "@/components/cart/floating-cart-button";
 import { FloatingWhatsAppButton } from "@/components/site/floating-whatsapp-button";
+import { MetaPixel } from "@/components/site/meta-pixel";
 import { MobileSiteChrome } from "@/components/site/mobile-site-chrome";
 import { SiteBannerStrip } from "@/components/site/site-banner-strip";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -28,6 +30,8 @@ type StoreShellProps =
   | { page: "mis-reservas"; searchParams?: Record<string, string> }
   | { page: "compra-colectiva"; lotId: string; searchParams?: Record<string, string> }
   | { page: "product"; sku: string; searchParams?: Record<string, string> };
+
+const META_PIXEL_ID = String(import.meta.env.PUBLIC_META_PIXEL_ID ?? "").trim();
 
 function readBrowserSearchParams() {
   if (typeof window === "undefined") {
@@ -74,6 +78,7 @@ export function StoreShell(props: StoreShellProps) {
   const menus = getDynamicHeaderMenus();
   const paymentMethods = getActivePaymentMethods();
   const [browserSearchParams, setBrowserSearchParams] = useState<Record<string, string> | null>(null);
+  const [, setCatalogVersion] = useState(0);
   const searchParams = browserSearchParams ?? ("searchParams" in props ? props.searchParams : undefined);
 
   useEffect(() => {
@@ -87,8 +92,29 @@ export function StoreShell(props: StoreShellProps) {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/catalog.php", { headers: { Accept: "application/json" }, cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("No se pudo actualizar el catalogo.");
+        return response.json() as Promise<{ products?: ProductItem[] }>;
+      })
+      .then((data) => {
+        if (!active || !Array.isArray(data.products)) return;
+        replaceCatalogProducts(data.products);
+        setCatalogVersion((version) => version + 1);
+      })
+      .catch(() => {
+        // La vista previa local usa el catalogo estatico mientras PHP no esta disponible.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <ViewerProvider initialViewer={null}>
+      <MetaPixel fallbackPixelId={META_PIXEL_ID} />
       <CartProvider>
         <div className="relative flex h-dvh flex-col overflow-hidden lg:h-auto lg:min-h-screen lg:overflow-visible">
           <div className="hidden lg:block">

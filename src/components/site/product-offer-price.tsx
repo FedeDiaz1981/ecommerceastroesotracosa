@@ -26,6 +26,12 @@ export function ProductOfferPrice({
   const [currentOfferActive, setCurrentOfferActive] = useState(offerActive);
 
   useEffect(() => {
+    setListPrice(initialListPrice);
+    setCurrentOfferPrice(offerPrice);
+    setCurrentOfferActive(offerActive);
+  }, [initialListPrice, offerPrice, offerActive]);
+
+  useEffect(() => {
     const handleMeasureChange = (event: Event) => {
       const detail = (event as CustomEvent<ProductMeasureChangeDetail>).detail;
       if (detail.productId === productId && typeof detail.listPrice === "number") {

@@ -8,6 +8,10 @@ export function ProductDynamicPrice({ productId, initialPrice, priceKey = "price
   const [price, setPrice] = useState(initialPrice);
 
   useEffect(() => {
+    setPrice(initialPrice);
+  }, [initialPrice]);
+
+  useEffect(() => {
     const handleMeasureChange = (event: Event) => {
       const detail = (event as CustomEvent<ProductMeasureChangeDetail>).detail;
       const nextPrice = detail[priceKey];

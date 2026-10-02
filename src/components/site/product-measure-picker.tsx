@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CartAddButton } from "@/components/cart/cart-add-button";
 import type { ProductItem, ProductMeasure } from "@/domain/site-content";
 import { formatCurrency } from "@/lib/catalog";
-import { isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
+import { getDefaultProductMeasure, isProductOfferActive, resolveProductCashPrice, resolveProductUnitPrice } from "@/lib/pricing";
 import { PRODUCT_MEASURE_CHANGE_EVENT } from "@/components/site/product-measure-events";
 
 function getDimensions(measure: ProductMeasure) {
@@ -16,8 +16,13 @@ function getDimensions(measure: ProductMeasure) {
 
 export function ProductMeasurePicker({ product }: { product: ProductItem }) {
   const measures = product.measures ?? [];
-  const [selectedMeasureId, setSelectedMeasureId] = useState(measures[0]?.id ?? "");
-  const selectedMeasure = measures.find((measure) => measure.id === selectedMeasureId) ?? measures[0] ?? null;
+  const defaultMeasure = getDefaultProductMeasure(product);
+  const [selectedMeasureId, setSelectedMeasureId] = useState(defaultMeasure?.id ?? "");
+  const selectedMeasure = measures.find((measure) => measure.id === selectedMeasureId) ?? defaultMeasure;
+
+  useEffect(() => {
+    setSelectedMeasureId(defaultMeasure?.id ?? "");
+  }, [product, defaultMeasure?.id]);
 
   const selectMeasure = (measure: ProductMeasure) => {
     setSelectedMeasureId(measure.id);

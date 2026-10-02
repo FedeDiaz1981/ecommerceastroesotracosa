@@ -64,6 +64,10 @@ export function getSiteContentSnapshot() {
   return content;
 }
 
+export function replaceCatalogProducts(products: ProductItem[]) {
+  content.products = products;
+}
+
 function getAlphabetPair(initial: string) {
   const normalized = initial.toUpperCase();
   if (normalized < "A" || normalized > "Z") {

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { deleteAdminRecord, deleteAdminRecords, reorderAdminProducts, saveAdminRecord } from "@/app/admin/actions";
+import { deleteAdminRecord, deleteAdminRecords, reorderAdminTable, saveAdminRecord } from "@/app/admin/actions";
+import { getStaticAccessToken } from "@/lib/static-auth";
 import type {
   AdminCrudViewModel,
   AdminFieldDefinition,
@@ -69,6 +70,19 @@ type UploadState = {
 };
 
 const ADMIN_PAGE_SIZE = 10;
+const ORDERABLE_TABLE_KEYS = new Set<AdminTableKey>([
+  "products",
+  "product_lots",
+  "product_lot_reservations",
+  "packs",
+  "brands",
+  "payment_methods",
+  "fabrics",
+  "categories",
+  "users",
+  "hero_slides",
+  "banners",
+]);
 
 const MAX_PRODUCT_VIDEO_SIZE_BYTES = 20 * 1024 * 1024;
 const PRODUCT_IMAGE_ACCEPT = ".jpg,.jpeg,.png,.webp,.gif,.avif";
@@ -942,7 +956,7 @@ function PackProductsField({
 
 export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewModel; viewerName: string }) {
   const { overview, tables, productSelectionRows } = model;
-  const initialTableKey = (tables.find((table) => table.key === "hero_slides")?.key ?? tables[0]?.key ?? "") as AdminTableKey;
+  const initialTableKey = (tables.find((table) => table.key === "products")?.key ?? tables[0]?.key ?? "") as AdminTableKey;
 
   const [selectedTableKey, setSelectedTableKey] = useState<AdminTableKey>(initialTableKey);
   const [query, setQuery] = useState("");
@@ -954,14 +968,29 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [bulkDeleteState, setBulkDeleteState] = useState<BulkDeleteState | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [draggedProductId, setDraggedProductId] = useState<number | null>(null);
-  const [dragOverProductId, setDragOverProductId] = useState<number | null>(null);
+  const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
+  const [dragOverRowId, setDragOverRowId] = useState<string | null>(null);
   const [reorderSaving, setReorderSaving] = useState(false);
-  const [productOrder, setProductOrder] = useState<number[]>(() =>
-    ((tables.find((table) => table.key === "products")?.rows as Record<string, unknown>[] | undefined) ?? [])
-      .slice()
-      .sort((left, right) => Number(left.sortOrder ?? left.id) - Number(right.sortOrder ?? right.id))
-      .map((row) => Number(row.id)),
+  const [settingKey, setSettingKey] = useState<"mercado_pago_access_token" | "meta_pixel_id" | null>(null);
+  useEffect(() => {
+    if (!settingKey) return;
+    const label = settingKey === "mercado_pago_access_token" ? "Access Token de Mercado Pago" : "ID del píxel de Meta";
+    const value = window.prompt(`Ingresá ${label}:`);
+    setSettingKey(null);
+    if (!value?.trim()) return;
+    void getStaticAccessToken().then((accessToken) => {
+      if (!accessToken) throw new Error("IniciÃ¡ sesiÃ³n como administrador para guardar cambios.");
+      return fetch(`/api/admin/settings.php?key=${settingKey}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ value }) });
+    })
+      .then(async (response) => { const text = await response.text(); let data: { error?: string } = {}; try { data = JSON.parse(text); } catch { throw new Error("Este guardado requiere PHP. Probalo en Hostinger, no en el servidor local de Astro."); } if (!response.ok) throw new Error(data.error); window.alert(`${label} guardado.`); })
+      .catch((error) => window.alert(error instanceof Error ? error.message : "No se pudo guardar."));
+  }, [settingKey]);
+  const [rowOrders, setRowOrders] = useState<Record<string, string[]>>(() =>
+    Object.fromEntries(
+      tables
+        .filter((table) => ORDERABLE_TABLE_KEYS.has(table.key))
+        .map((table) => [table.key, (table.rows as Record<string, unknown>[]).map((row) => String(row.id))]),
+    ),
   );
   const selectAllRef = useRef<HTMLInputElement | null>(null);
 
@@ -969,31 +998,29 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     () => tables.find((table) => table.key === selectedTableKey) ?? tables[0],
     [selectedTableKey, tables],
   );
+  const tableColumns = useMemo(() => {
+    if (!selectedTable) return [];
 
-  const modelProductOrder = useMemo(
-    () =>
-      ((tables.find((table) => table.key === "products")?.rows as Record<string, unknown>[] | undefined) ?? [])
-        .slice()
-        .sort((left, right) => Number(left.sortOrder ?? left.id) - Number(right.sortOrder ?? right.id))
-        .map((row) => Number(row.id)),
-    [tables],
-  );
-  const modelProductOrderKey = modelProductOrder.join(",");
+    const hasPosition = selectedTable.columns.some((column) => column.key === "sortOrder");
+    if (!ORDERABLE_TABLE_KEYS.has(selectedTable.key) || hasPosition) return selectedTable.columns;
+
+    return [{ key: "sortOrder", label: "Posición" }, ...selectedTable.columns];
+  }, [selectedTable]);
+
   const selectedRows = useMemo<Record<string, unknown>[]>(() => {
     const rows = ((selectedTable?.rows as Record<string, unknown>[]) ?? []).slice();
 
-    if (selectedTable?.key !== "products") {
-      return rows;
-    }
+    if (!selectedTable || !ORDERABLE_TABLE_KEYS.has(selectedTable.key)) return rows;
 
-    const knownIds = new Set(productOrder);
-    const completeOrder = [...productOrder, ...rows.map((row) => Number(row.id)).filter((id) => !knownIds.has(id))];
+    const savedOrder = rowOrders[selectedTable.key] ?? [];
+    const knownIds = new Set(savedOrder);
+    const completeOrder = [...savedOrder, ...rows.map((row) => String(row.id)).filter((id) => !knownIds.has(id))];
     const positionById = new Map(completeOrder.map((id, index) => [id, index]));
 
     return rows
-      .sort((left, right) => (positionById.get(Number(left.id)) ?? Number.MAX_SAFE_INTEGER) - (positionById.get(Number(right.id)) ?? Number.MAX_SAFE_INTEGER))
-      .map((row) => ({ ...row, sortOrder: (positionById.get(Number(row.id)) ?? 0) + 1 }));
-  }, [productOrder, selectedTable]);
+      .sort((left, right) => (positionById.get(String(left.id)) ?? Number.MAX_SAFE_INTEGER) - (positionById.get(String(right.id)) ?? Number.MAX_SAFE_INTEGER))
+      .map((row) => ({ ...row, sortOrder: (positionById.get(String(row.id)) ?? 0) + 1 }));
+  }, [rowOrders, selectedTable]);
   const fieldMap = useMemo(
     () => new Map((selectedTable?.fields ?? []).map((field) => [field.key, field] as const)),
     [selectedTable],
@@ -1042,8 +1069,35 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
   );
 
   useEffect(() => {
-    setProductOrder(modelProductOrder);
-  }, [modelProductOrderKey]);
+    setRowOrders((current) => {
+      const next = { ...current };
+      for (const table of tables) {
+        if (!ORDERABLE_TABLE_KEYS.has(table.key)) continue;
+        const ids = (table.rows as Record<string, unknown>[]).map((row) => String(row.id));
+        const existing = next[table.key] ?? [];
+        const allowed = new Set(ids);
+        next[table.key] = [...existing.filter((id) => allowed.has(id)), ...ids.filter((id) => !existing.includes(id))];
+      }
+      return next;
+    });
+  }, [tables]);
+
+  useEffect(() => {
+    void getStaticAccessToken()
+      .then((accessToken) => {
+        if (!accessToken) return null;
+        return fetch("/api/admin/orders.php", { headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` } });
+      })
+      .then(async (response) => {
+        if (!response?.ok) return null;
+        return response.json() as Promise<{ orders?: Record<string, string[]> }>;
+      })
+      .then((data) => {
+        if (!data?.orders) return;
+        setRowOrders((current) => ({ ...current, ...data.orders }));
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1127,36 +1181,61 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
     setSelectedRowId((current) => (current === rowId ? "" : current));
   }
 
-  async function handleProductDrop(targetProductId: number) {
-    if (!draggedProductId || draggedProductId === targetProductId || query.trim() || reorderSaving) {
-      setDraggedProductId(null);
-      setDragOverProductId(null);
+  async function handleRowDrop(targetRowId: string) {
+    if (!selectedTable || !draggedRowId || draggedRowId === targetRowId || query.trim() || reorderSaving) {
+      setDraggedRowId(null);
+      setDragOverRowId(null);
       return;
     }
 
-    const previousOrder = productOrder;
-    const nextOrder = productOrder.filter((id) => id !== draggedProductId);
-    const targetIndex = nextOrder.indexOf(targetProductId);
+    const tableKey = selectedTable.key;
+    const previousOrder = rowOrders[tableKey] ?? selectedRows.map((row) => String(row.id));
+    const nextOrder = previousOrder.filter((id) => id !== draggedRowId);
+    const targetIndex = nextOrder.indexOf(targetRowId);
 
     if (targetIndex < 0) {
-      setDraggedProductId(null);
-      setDragOverProductId(null);
+      setDraggedRowId(null);
+      setDragOverRowId(null);
       return;
     }
 
-    nextOrder.splice(targetIndex, 0, draggedProductId);
-    setProductOrder(nextOrder);
-    setDraggedProductId(null);
-    setDragOverProductId(null);
+    nextOrder.splice(targetIndex, 0, draggedRowId);
+    setRowOrders((current) => ({ ...current, [tableKey]: nextOrder }));
+    setDraggedRowId(null);
+    setDragOverRowId(null);
     setReorderSaving(true);
 
     try {
-      const formData = new FormData();
-      formData.set("ids_json", JSON.stringify(nextOrder));
-      await reorderAdminProducts(formData);
+      await reorderAdminTable(tableKey, nextOrder);
     } catch (error) {
-      setProductOrder(previousOrder);
+      setRowOrders((current) => ({ ...current, [tableKey]: previousOrder }));
       window.alert(error instanceof Error ? error.message : "No se pudo guardar el nuevo orden.");
+    } finally {
+      setReorderSaving(false);
+    }
+  }
+
+  async function handleMoveToPosition(rowId: string, requestedPosition: number) {
+    if (!selectedTable || !ORDERABLE_TABLE_KEYS.has(selectedTable.key) || query.trim() || reorderSaving) return;
+
+    const tableKey = selectedTable.key;
+    const previousOrder = rowOrders[tableKey] ?? selectedRows.map((row) => String(row.id));
+    const currentIndex = previousOrder.indexOf(rowId);
+    if (currentIndex < 0 || !Number.isFinite(requestedPosition)) return;
+
+    const nextOrder = previousOrder.filter((id) => id !== rowId);
+    const targetIndex = Math.max(0, Math.min(nextOrder.length, Math.trunc(requestedPosition) - 1));
+    nextOrder.splice(targetIndex, 0, rowId);
+    if (nextOrder.every((id, index) => id === previousOrder[index])) return;
+
+    setRowOrders((current) => ({ ...current, [tableKey]: nextOrder }));
+    setReorderSaving(true);
+
+    try {
+      await reorderAdminTable(tableKey, nextOrder);
+    } catch (error) {
+      setRowOrders((current) => ({ ...current, [tableKey]: previousOrder }));
+      window.alert(error instanceof Error ? error.message : "No se pudo guardar la posición.");
     } finally {
       setReorderSaving(false);
     }
@@ -1392,14 +1471,10 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                     {getCreateLabel(selectedTable)}
                   </button>
                 ) : null}
+                <Link href="/" className="inline-flex h-14 items-center justify-center rounded-full border border-[var(--pf-border-warm)] bg-white px-5 text-sm font-bold text-[var(--pf-text)] shadow-[0_8px_20px_rgba(29,24,20,0.06)] transition hover:bg-[var(--pf-primary-faint)]">Ir a la web</Link>
+                <button type="button" onClick={() => setSettingKey("mercado_pago_access_token")} className="inline-flex h-14 items-center justify-center rounded-full border border-[var(--pf-border-warm)] bg-white px-5 text-sm font-bold text-[var(--pf-primary-darker)] shadow-[0_8px_20px_rgba(29,24,20,0.06)]">Mercado Pago</button>
+                <button type="button" onClick={() => setSettingKey("meta_pixel_id")} className="inline-flex h-14 items-center justify-center rounded-full border border-[var(--pf-border-warm)] bg-white px-5 text-sm font-bold text-[var(--pf-primary-darker)] shadow-[0_8px_20px_rgba(29,24,20,0.06)]">Pixel de Meta</button>
               </div>
-
-              <Link
-                href="/"
-                className="inline-flex h-14 items-center justify-center rounded-full border border-transparent px-5 text-sm font-semibold text-[var(--pf-text)] transition hover:bg-white/60"
-              >
-                Ir a la web
-              </Link>
             </div>
 
             <div className="mt-6">
@@ -1433,7 +1508,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                     <table className="min-w-[960px] w-full border-collapse">
                       <thead className="bg-[rgba(245,243,239,0.6)]">
                         <tr>
-                          {selectedTable.key === "products" ? (
+                          {ORDERABLE_TABLE_KEYS.has(selectedTable.key) ? (
                             <th className="w-14 border-b border-[var(--pf-border-soft)] px-3 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[var(--pf-muted)]">
                               Mover
                             </th>
@@ -1464,7 +1539,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                               aria-label="Seleccionar todos los visibles"
                             />
                           </th>
-                          {selectedTable.columns.map((column) => (
+                          {tableColumns.map((column) => (
                             <th
                               key={column.key}
                               className="border-b border-[var(--pf-border-soft)] px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.24em] text-[var(--pf-muted)]"
@@ -1481,8 +1556,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                         {paginatedRows.map((row) => {
                           const rowId = getRowId(selectedTable, row);
                           const isSelected = rowId === selectedRowId || selectedRowIdSet.has(rowId);
-                          const productId = selectedTable.key === "products" ? Number(row.id) : 0;
-                          const canDrag = selectedTable.key === "products" && !query.trim() && !reorderSaving;
+                          const canDrag = ORDERABLE_TABLE_KEYS.has(selectedTable.key) && !query.trim() && !reorderSaving;
 
                           return (
                             <tr
@@ -1490,22 +1564,22 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                               onDragOver={(event) => {
                                 if (!canDrag) return;
                                 event.preventDefault();
-                                setDragOverProductId(productId);
+                                setDragOverRowId(rowId);
                               }}
                               onDrop={(event) => {
                                 if (!canDrag) return;
                                 event.preventDefault();
-                                void handleProductDrop(productId);
+                                void handleRowDrop(rowId);
                               }}
                               className={`border-b border-[var(--pf-border-soft)] transition ${
-                                dragOverProductId === productId
+                                dragOverRowId === rowId
                                   ? "bg-[rgba(200,154,21,0.14)]"
                                   : isSelected
                                     ? "bg-[#fff8ec]"
                                     : "hover:bg-[#fdf8ef]"
                               }`}
                             >
-                              {selectedTable.key === "products" ? (
+                              {ORDERABLE_TABLE_KEYS.has(selectedTable.key) ? (
                                 <td className="px-3 py-4 text-center align-top">
                                   <button
                                     type="button"
@@ -1514,11 +1588,11 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                                     onDragStart={(event) => {
                                       event.dataTransfer.effectAllowed = "move";
                                       event.dataTransfer.setData("text/plain", rowId);
-                                      setDraggedProductId(productId);
+                                      setDraggedRowId(rowId);
                                     }}
                                     onDragEnd={() => {
-                                      setDraggedProductId(null);
-                                      setDragOverProductId(null);
+                                      setDraggedRowId(null);
+                                      setDragOverRowId(null);
                                     }}
                                     className="inline-flex h-9 w-9 cursor-grab items-center justify-center rounded-lg border border-[var(--pf-border-soft)] bg-white text-[var(--pf-muted)] transition hover:border-[var(--pf-primary)] hover:text-[var(--pf-primary-darker)] active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label={`Mover ${String(row[selectedTable.rowLabelField] ?? rowId)}`}
@@ -1547,8 +1621,32 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                                 aria-label={`Seleccionar ${String(row[selectedTable.rowLabelField] ?? rowId)}`}
                               />
                               </td>
-                              {selectedTable.columns.map((column) => {
+                              {tableColumns.map((column) => {
                                 const field = fieldMap.get(column.key);
+
+                                if (column.key === "sortOrder") {
+                                  return (
+                                    <td key={column.key} className="px-5 py-4 align-top text-sm text-[var(--pf-text)]">
+                                      <input
+                                        key={`${rowId}:${String(row.sortOrder ?? "")}`}
+                                        type="number"
+                                        min="1"
+                                        max={selectedRows.length}
+                                        defaultValue={Number(row.sortOrder) || 1}
+                                        disabled={!canDrag}
+                                        onBlur={(event) => {
+                                          void handleMoveToPosition(rowId, Number(event.currentTarget.value));
+                                        }}
+                                        onKeyDown={(event) => {
+                                          if (event.key === "Enter") event.currentTarget.blur();
+                                        }}
+                                        className="h-9 w-16 rounded-lg border border-[var(--pf-border-soft)] bg-white px-2 text-center font-bold text-[var(--pf-text)] outline-none transition focus:border-[var(--pf-primary)] disabled:cursor-not-allowed disabled:bg-[rgba(245,243,239,0.6)] disabled:text-[var(--pf-muted)]"
+                                        aria-label={`Posición de ${String(row[selectedTable.rowLabelField] ?? rowId)}`}
+                                        title={query.trim() ? "Quitá la búsqueda para ordenar" : "Ingresá una posición y presioná Enter"}
+                                      />
+                                    </td>
+                                  );
+                                }
 
                                 return (
                                   <td key={column.key} className="px-5 py-4 align-top text-sm text-[var(--pf-text)]">
@@ -1624,8 +1722,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                       </tbody>
                     </table>
                   </div>
-                  {totalPages > 1 ? (
-                    <div className="flex flex-col gap-3 border-t border-[var(--pf-border-soft)] bg-[rgba(245,243,239,0.45)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 border-t border-[var(--pf-border-soft)] bg-[rgba(245,243,239,0.45)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm font-semibold text-[var(--pf-muted)]">
                         {(currentPage - 1) * ADMIN_PAGE_SIZE + 1}-{Math.min(currentPage * ADMIN_PAGE_SIZE, visibleRows.length)} de {visibleRows.length}
                       </p>
@@ -1638,8 +1735,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                           <ChevronRight className="h-4 w-4" aria-hidden="true" />
                         </button>
                       </div>
-                    </div>
-                  ) : null}
+                  </div>
                 </div>
               </section>
             </div>

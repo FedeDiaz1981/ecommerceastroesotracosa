@@ -64,7 +64,12 @@ function isOfferActive(pricing: OfferPricingFields, now = new Date()) {
 }
 
 function resolveMeasure(product: ProductPricingFields, measure?: Pick<ProductMeasure, "id"> | null) {
-  return measure ? product.measures?.find((item) => item.id === measure.id) : product.measures?.[0];
+  return measure ? product.measures?.find((item) => item.id === measure.id) : getDefaultProductMeasure(product);
+}
+
+export function getDefaultProductMeasure(product: ProductPricingFields, now = new Date()) {
+  const measures = product.measures ?? [];
+  return measures.find((measure) => isOfferActive(measure, now)) ?? measures[0] ?? null;
 }
 
 function getMeasurePricing(product: ProductPricingFields, measure?: Pick<ProductMeasure, "id"> | null): OfferPricingFields {
