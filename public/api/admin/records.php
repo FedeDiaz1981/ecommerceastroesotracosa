@@ -28,6 +28,25 @@ function nextProductId(): int {
   return intValue($rows[0]['id'] ?? 0) + 1;
 }
 
+function nextProductCopyName(string $sourceName): string {
+  $baseName = trim((string) preg_replace('/\s+-\s+copia(?:\s+\d{2})?$/iu', '', $sourceName));
+  if ($baseName === '') $baseName = trim($sourceName);
+
+  [, $rows] = supabase('GET', 'products?deleted_at=is.null&select=name&name=like.' . rawurlencode($baseName . ' - copia*'));
+  $usedNames = [];
+  foreach ($rows as $row) $usedNames[strtolower(trim((string) ($row['name'] ?? '')))] = true;
+
+  $firstName = $baseName . ' - copia';
+  if (!isset($usedNames[strtolower($firstName)])) return $firstName;
+
+  for ($suffix = 1; $suffix <= 99; $suffix++) {
+    $candidate = $baseName . ' - copia ' . str_pad((string) $suffix, 2, '0', STR_PAD_LEFT);
+    if (!isset($usedNames[strtolower($candidate)])) return $candidate;
+  }
+
+  respond(['error' => 'No se pudieron generar más nombres de copia para este producto.'], 422);
+}
+
 function productPayload(array $record, int $id): array {
   $categoryIds = array_values(array_filter(array_map('intval', listValue($record['categoryIds'] ?? [])), fn($value) => $value > 0));
   if (count($categoryIds) === 0) respond(['error' => 'El producto necesita al menos una categoria.'], 422);
@@ -136,6 +155,28 @@ if ($action === 'reorder' || $action === 'reorder_products') {
 }
 
 if ($table !== 'products') respond(['error' => 'Esta tabla todavía no admite altas, ediciones ni borrados desde PHP.'], 422);
+
+if ($action === 'clone_product') {
+  $sourceId = intValue($request['id'] ?? 0);
+  if ($sourceId <= 0) respond(['error' => 'Falta el producto que se quiere copiar.'], 422);
+
+  [, $sourceRows] = supabase('GET', 'products?id=eq.' . $sourceId . '&deleted_at=is.null&select=*');
+  $source = $sourceRows[0] ?? null;
+  if (!is_array($source)) respond(['error' => 'El producto original no existe o fue eliminado.'], 404);
+
+  $newId = nextProductId();
+  [, $maxOrderRows] = supabase('GET', 'products?deleted_at=is.null&select=sort_order&order=sort_order.desc&limit=1');
+  $clone = $source;
+  unset($clone['deleted_at'], $clone['created_at'], $clone['updated_at']);
+  $clone['id'] = $newId;
+  $clone['sku'] = 'PF' . str_pad((string) $newId, 4, '0', STR_PAD_LEFT);
+  $clone['name'] = nextProductCopyName((string) ($source['name'] ?? 'Producto'));
+  $clone['sort_order'] = intValue($maxOrderRows[0]['sort_order'] ?? 0) + 1;
+
+  [$status, $result] = supabase('POST', 'products', $clone);
+  if ($status < 200 || $status >= 300) respond(['error' => 'Supabase no pudo crear la copia.', 'details' => $result], 502);
+  respond(['ok' => true, 'id' => $newId, 'name' => $clone['name']]);
+}
 
 if ($action === 'save') {
   $record = is_array($request['payload'] ?? null) ? $request['payload'] : [];

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, GripVertical } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { deleteAdminRecord, deleteAdminRecords, reorderAdminTable, saveAdminRecord } from "@/app/admin/actions";
+import { cloneAdminProduct, deleteAdminRecord, deleteAdminRecords, reorderAdminTable, saveAdminRecord } from "@/app/admin/actions";
 import { getStaticAccessToken } from "@/lib/static-auth";
 import type {
   AdminCrudViewModel,
@@ -964,6 +964,7 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
   const [fileNames, setFileNames] = useState<Record<string, string>>({});
   const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
   const [selectedRowId, setSelectedRowId] = useState("");
+  const [cloningRowId, setCloningRowId] = useState("");
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [bulkDeleteState, setBulkDeleteState] = useState<BulkDeleteState | null>(null);
@@ -1179,6 +1180,25 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
 
     setSelectedRowIds((current) => current.filter((id) => id !== rowId));
     setSelectedRowId((current) => (current === rowId ? "" : current));
+  }
+
+  async function handleCloneProduct(row: Record<string, unknown>) {
+    const rowId = String(row.id ?? "");
+    const rowName = String(row.name ?? rowId);
+
+    if (!rowId || cloningRowId) return;
+    if (!window.confirm(`Crear una copia de ${rowName}?`)) return;
+
+    setCloningRowId(rowId);
+    try {
+      const formData = new FormData();
+      formData.set("id", rowId);
+      await cloneAdminProduct(formData);
+      window.location.reload();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "No se pudo crear la copia.");
+      setCloningRowId("");
+    }
   }
 
   async function handleRowDrop(targetRowId: string) {
@@ -1697,6 +1717,19 @@ export function AdminWorkspace({ model, viewerName }: { model: AdminCrudViewMode
                                     </>
                                   ) : (
                                     <>
+                                      {selectedTable.key === "products" ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleCloneProduct(row)}
+                                          disabled={Boolean(cloningRowId)}
+                                          className="inline-flex items-center gap-2 rounded-full border border-[rgba(200,154,21,0.35)] bg-white px-4 py-2 text-xs font-bold text-[var(--pf-primary-darker)] transition hover:bg-[#fff8ec] disabled:cursor-wait disabled:opacity-60"
+                                          title="Crear una copia del producto"
+                                        >
+                                          <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                          {cloningRowId === rowId ? "Copiando..." : "Crear copia"}
+                                        </button>
+                                      ) : null}
+
                                       <button
                                         type="button"
                                         onClick={() => openEdit(selectedTable, row)}

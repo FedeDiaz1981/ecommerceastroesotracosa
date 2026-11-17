@@ -40,6 +40,10 @@ export async function deleteAdminRecords(formData: FormData) {
   });
 }
 
+export async function cloneAdminProduct(formData: FormData) {
+  await request("clone_product", { table: "products", id: String(formData.get("id") ?? "") });
+}
+
 export async function reorderAdminProducts(formData: FormData) {
   await reorderAdminTable("products", JSON.parse(String(formData.get("ids_json") ?? "[]")));
 }

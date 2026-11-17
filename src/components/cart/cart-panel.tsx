@@ -29,6 +29,7 @@ type CustomerContact = {
   name: string;
   email: string;
   phone: string;
+  paymentMethod: "electronic" | "cash";
 };
 
 const paymentOptions: PaymentOption[] = [
@@ -246,6 +247,7 @@ function CustomerContactModal({
   onSubmit: (contact: CustomerContact) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<CustomerContact["paymentMethod"]>(defaultValue?.paymentMethod ?? "electronic");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -254,6 +256,7 @@ function CustomerContactModal({
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
       phone: String(formData.get("phone") ?? "").trim(),
+      paymentMethod: formData.get("paymentMethod") === "cash" ? "cash" : "electronic",
     };
 
     if (!contact.name || !contact.email || !contact.phone) {
@@ -337,10 +340,29 @@ function CustomerContactModal({
               />
             </label>
 
+            <label className="block">
+              <span className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-[var(--pf-muted)]">
+                <Wallet className="size-4" />
+                Forma de pago
+              </span>
+              <select
+                name="paymentMethod"
+                value={paymentMethod}
+                onChange={(event) => setPaymentMethod(event.target.value === "cash" ? "cash" : "electronic")}
+                className="h-12 w-full rounded-[1rem] border border-[var(--pf-border)] bg-white px-4 text-sm font-semibold text-[var(--pf-text)] outline-none transition focus:border-[var(--pf-primary)]"
+              >
+                <option value="electronic">Pago electrónico — Mercado Pago</option>
+                <option value="cash">Pago en efectivo — coordinar con el vendedor</option>
+              </select>
+              <span className="mt-2 block text-xs leading-5 text-[var(--pf-muted)]">
+                Para efectivo enviaremos el pedido al vendedor automáticamente para coordinarlo.
+              </span>
+            </label>
+
             {error ? <p className="rounded-[1rem] bg-[#fff4f2] px-4 py-3 text-sm font-semibold text-[var(--pf-accent)]">{error}</p> : null}
 
             <Button type="submit" variant="primary" size="lg" className="mt-1 h-12 w-full !rounded-[1rem] text-base shadow-[0_14px_28px_rgba(212,168,26,0.22)]">
-              Continuar al pago
+              {paymentMethod === "cash" ? "Enviar pedido en efectivo" : "Continuar al pago"}
             </Button>
           </form>
 
@@ -638,6 +660,80 @@ export function CartPanel({
     setContactModalOpen(true);
   }, [hydrated, items.length]);
 
+  const handleCashOrder = useCallback(
+    async (contact: CustomerContact) => {
+      if (!hydrated || items.length === 0 || isConfirming) return;
+
+      try {
+        setIsConfirming(true);
+        const reference = `CASH-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        const pdf = buildPedidoPdf({
+          customer: contact,
+          paymentMethod: "Pago en efectivo",
+          installmentsLabel: "A coordinar con el vendedor",
+          items,
+          totalItems,
+          total: totalPrice,
+        });
+
+        if (import.meta.env.DEV) {
+          downloadPedidoPdf(pdf);
+          clearCart();
+          closeCart();
+          setContactModalOpen(false);
+          setSuccessMessage("PDF descargado en modo local");
+          return;
+        }
+
+        const response = await fetch("/api/whatsapp/cash-order.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            reference,
+            customer: { name: contact.name, email: contact.email, phone: contact.phone },
+            items: items.map((item) => ({
+              kind: item.kind,
+              id: item.id,
+              sku: item.sku,
+              name: item.name,
+              measureLabel: item.measureLabel,
+              quantity: item.quantity,
+              unitPrice: resolveCartLineUnitPrice(item),
+            })),
+            total: totalPrice,
+            totalItems,
+          }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+        if (!response.ok || !payload.ok) throw new Error(payload.error || "No pudimos enviar el pedido al vendedor.");
+
+        clearCart();
+        closeCart();
+        setContactModalOpen(false);
+        setSuccessMessage("Pedido enviado correctamente");
+        window.setTimeout(() => downloadPedidoPdf(pdf), 250);
+      } catch (error) {
+        console.error(error);
+        if (import.meta.env.PROD) {
+          // Even if WhatsApp is temporarily unavailable, keep the order detail available for review.
+          const pdf = buildPedidoPdf({
+            customer: contact,
+            paymentMethod: "Pago en efectivo",
+            installmentsLabel: "A coordinar con el vendedor",
+            items,
+            totalItems,
+            total: totalPrice,
+          });
+          downloadPedidoPdf(pdf);
+        }
+        window.alert(error instanceof Error ? error.message : "No pudimos enviar el pedido.");
+      } finally {
+        setIsConfirming(false);
+      }
+    },
+    [clearCart, closeCart, hydrated, isConfirming, items, totalItems, totalPrice],
+  );
+
   const handleApprovePayment = useCallback(
     async (paymentMethod: string, installments: number) => {
       if (!hydrated || items.length === 0 || isConfirming) {
@@ -710,7 +806,11 @@ export function CartPanel({
       onSubmit={(contact) => {
         setCustomerContact(contact);
         setContactModalOpen(false);
-        setPaymentModalOpen(true);
+        if (contact.paymentMethod === "cash") {
+          void handleCashOrder(contact);
+        } else {
+          setPaymentModalOpen(true);
+        }
       }}
     />
   ) : null;

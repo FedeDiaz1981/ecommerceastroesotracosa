@@ -1,0 +1,16 @@
+Crear en Meta Business Manager una plantilla de categoria UTILITY con estos datos:
+
+Nombre: cash_order_notification
+Idioma: es_AR
+
+Cuerpo:
+Nuevo pedido {{1}} con pago en efectivo.
+Cliente: {{2}}
+Telefono: {{3}}
+Email: {{4}}
+Detalle:
+{{5}}
+Total: {{6}}
+Articulos: {{7}}
+
+La plantilla debe aprobarse antes de activar el endpoint en produccion. No agregues contenido promocional: es una notificacion transaccional al vendedor.
